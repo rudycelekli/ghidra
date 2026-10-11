@@ -1,0 +1,31 @@
+name: Byte array capacity native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/capacity-native-gate.py /tmp/capacity-native-gate.py
+      - run: git fetch origin 87edb9dd93b5b78b5b8d2da5e6b65a223db32def && git checkout --detach 87edb9dd93b5b78b5b8d2da5e6b65a223db32def
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: capacity
+          HEAD_SHA: 87edb9dd93b5b78b5b8d2da5e6b65a223db32def
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ByteArrayArray.java", "test_task": ":Generic:test", "test_classes": ["ghidra.util.datastruct.ByteArrayArrayTest", "ghidra.util.datastruct.DataTableTest"], "class_counts": {"ghidra.util.datastruct.ByteArrayArrayTest": 6, "ghidra.util.datastruct.DataTableTest": 1}, "result_dir": "Ghidra/Framework/Generic/build/test-results/test", "total": 7, "failures": [["ghidra.util.datastruct.ByteArrayArrayTest", "testMissingAtInitialCapacity"], ["ghidra.util.datastruct.ByteArrayArrayTest", "testMissingAtCapacityAfterGrowthAndShrink"], ["ghidra.util.datastruct.ByteArrayArrayTest", "testMissingByteArrayAtCapacityThroughDataTable"], ["ghidra.util.datastruct.ByteArrayArrayTest", "testMissingByteArrayAtCapacityThroughObjectStorage"]]}'
+        run: python /tmp/capacity-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-capacity
+          path: native-evidence/
+          retention-days: 14
