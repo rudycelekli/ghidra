@@ -1,0 +1,30 @@
+name: PyGhidra program walk native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/walk-programs-native-gate.py /tmp/walk-programs-native-gate.py
+      - run: git fetch origin b372c63bcef3560397d78873784bceb60bd52d80 && git checkout --detach b372c63bcef3560397d78873784bceb60bd52d80
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native targeted regressions, original core parity, and full build
+        env:
+          CANDIDATE_KIND: walk-programs
+          CANDIDATE_HEAD: b372c63bcef3560397d78873784bceb60bd52d80
+        run: python /tmp/walk-programs-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-walk-programs
+          path: native-evidence/
+          retention-days: 14
