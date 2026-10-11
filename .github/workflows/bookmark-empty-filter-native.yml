@@ -1,0 +1,32 @@
+name: Bookmark explicit empty filter native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/bookmark-empty-filter-native-gate.py /tmp/bookmark-empty-filter-native-gate.py
+      - run: git fetch origin 42bd1cbada65faa64f790fdeeb82ed7c3b462130 && git checkout --detach 42bd1cbada65faa64f790fdeeb82ed7c3b462130
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: bookmark-empty-filter
+          HEAD_SHA: 42bd1cbada65faa64f790fdeeb82ed7c3b462130
+          CONFIG: '{"language": "java", "productions": ["Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/bookmark/BookmarkTableModel.java", "Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/bookmark/BookmarkProvider.java", "Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/bookmark/FilterState.java"], "test_task": ":Base:integrationTest", "test_classes": ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "ghidra.app.plugin.core.bookmark.BookmarkPluginTest"], "class_counts": {"ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest": 8, "ghidra.app.plugin.core.bookmark.BookmarkPluginTest": 19}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 27, "failures": [["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testHideAllIsAnAppliedFilter"], ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testHideAllSurvivesAddedType"], ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testHideAllSurvivesXmlStateRoundTrip"], ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testHideAllSurvivesTransientStateAndReload"]], "expected_cases": [["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testHideAllIsAnAppliedFilter"], ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testHideAllSurvivesAddedType"], ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testHideAllSurvivesXmlStateRoundTrip"], ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testHideAllSurvivesTransientStateAndReload"], ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testAbsentStateKeepsDefaultTypes"], ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testNonemptySelectionSurvivesXmlStateRoundTrip"], ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testNewTypeRemainsDisabledForNonemptyFilter"], ["ghidra.app.plugin.core.bookmark.BookmarkEmptyFilterTest", "testMissingSelectedTypeKeepsExistingFallback"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testFiltering"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testFilteringByText"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testFilterPersistence"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testFilterPersistenceWithMissingType"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testSelectionGoto"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testSelectionMakeSelection"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testSelectionDelete"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testEditCategory"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testEditComment"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testAddBookmark"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testDeleteBookmarkAction"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testDeleteBookmarkUpdatesTable"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testMultipleDelete"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testSetNoteOverDiscontiguosSelection"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testMarkerAdded"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testDeleteOffcutBookmarks"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testIteratorFromAddress"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testIteratorFromAddress_Backwards"], ["ghidra.app.plugin.core.bookmark.BookmarkPluginTest", "testRemoveBookmarksByType"]]}'
+        run: python /tmp/bookmark-empty-filter-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-bookmark-empty-filter
+          path: native-evidence/
+          retention-days: 14
