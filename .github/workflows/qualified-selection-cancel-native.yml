@@ -1,0 +1,32 @@
+name: Qualified selection cancellation validation native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/qualified-selection-cancel-native-gate.py /tmp/qualified-selection-cancel-native-gate.py
+      - run: git fetch origin 36c29b08c99911cd25ca952cba3ae5144b5f7fb6 && git checkout --detach 36c29b08c99911cd25ca952cba3ae5144b5f7fb6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: qualified-selection-cancel
+          HEAD_SHA: 36c29b08c99911cd25ca952cba3ae5144b5f7fb6
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/select/qualified/QualifiedSelectionPlugin.java", "test_task": ":Base:integrationTest", "test_classes": ["ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest"], "class_counts": {"ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest": 6}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 6, "failures": [["ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest", "testCancelledDataSelectionPreservesSelection"], ["ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest", "testCancelledInstructionSelectionPreservesSelection"], ["ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest", "testCancelledUndefinedSelectionPreservesSelection"]], "expected_cases": [["ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest", "testSelectFromEntireProgram"], ["ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest", "testSelectFromASelection"], ["ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest", "testSelectWithView"], ["ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest", "testCancelledDataSelectionPreservesSelection"], ["ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest", "testCancelledInstructionSelectionPreservesSelection"], ["ghidra.app.plugin.core.select.qualified.QualifiedSelectionPluginTest", "testCancelledUndefinedSelectionPreservesSelection"]]}'
+        run: python /tmp/qualified-selection-cancel-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-qualified-selection-cancel
+          path: native-evidence/
+          retention-days: 14
