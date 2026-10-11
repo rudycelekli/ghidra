@@ -1,0 +1,33 @@
+name: PDB complex import and listing native validation
+on:
+  push:
+    branches: [validation/pdb-complex-listing-values-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/pdb-complex-native-gate.py /tmp/pdb-complex-native-gate.py
+      - run: git fetch origin ad5dd9ba3d6f8b51606458a010505420c5b782c2 && git checkout --detach ad5dd9ba3d6f8b51606458a010505420c5b782c2
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: pdb-complex
+          HEAD_SHA: ad5dd9ba3d6f8b51606458a010505420c5b782c2
+          CONFIG: '{"language": "java", "productions": ["Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractComplexDataType.java", "Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbPrimitiveTypeApplicator.java"], "test_task": ":PDB:test", "test_classes": ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest"], "class_counts": {"ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest": 8}, "result_dir": "Ghidra/Features/PDB/build/test-results/test", "total": 8, "failures": [["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testFloatComponentsLittleEndian"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testDoubleComponentsBigEndian"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testFloatSignedZeroAndInfinity"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testDoubleNaNAndInfinity"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testQuadPrecisionComponentsBothEndian"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testUninitializedComplexHasNoValue"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testExtendedPrecisionPrimitiveKeepsTwentyByteTypedef"]], "expected_cases": [["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testFloatComponentsLittleEndian"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testDoubleComponentsBigEndian"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testFloatSignedZeroAndInfinity"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testDoubleNaNAndInfinity"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testQuadPrecisionComponentsBothEndian"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testUninitializedComplexHasNoValue"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testCachedQuadPrimitiveKeepsTypeAndLength"], ["ghidra.app.util.pdb.pdbapplicator.PdbComplexListingValueTest", "testExtendedPrecisionPrimitiveKeepsTwentyByteTypedef"]]}'
+        run: python /tmp/pdb-complex-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-pdb-complex
+          path: native-evidence/
+          retention-days: 14
