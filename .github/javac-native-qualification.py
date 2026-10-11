@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory() as directory:
     subprocess.run(["javac", "-source", "21", "-target", "21", "-d", str(root / "classes"), str(dependency)], check=True)
     jar = root / "unique-owned-dependency.jar"
     subprocess.run(["jar", "--create", "--file", str(jar), "-C", str(root / "classes"), "."], check=True)
-    jpype.startJVM()
+    jpype.startJVM(convertStrings=True)
     from java.lang import System
     receipt["java_version"] = str(System.getProperty("java.version"))
     # Add only to the compiler property after JVM initialization: starting
