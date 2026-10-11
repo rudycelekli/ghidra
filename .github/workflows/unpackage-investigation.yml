@@ -1,0 +1,30 @@
+name: Investigate structure unpackage GUI
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/unpackage-investigation-gate.py /tmp/unpackage-investigation-gate.py
+      - run: git fetch origin c149870771c76da18da76887a81b61de74b6036c && git checkout --detach c149870771c76da18da76887a81b61de74b6036c
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Actual GUI investigation and full build
+        env:
+          HEAD_SHA: c149870771c76da18da76887a81b61de74b6036c
+        run: python /tmp/unpackage-investigation-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: unpackage-gui-investigation
+          path: native-evidence/
+          retention-days: 14
