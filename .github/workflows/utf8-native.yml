@@ -1,0 +1,31 @@
+name: UTF-8 memory search native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/utf8-native-gate.py /tmp/utf8-native-gate.py
+      - run: git fetch origin 20ebc2a5672860cc2490f8d6fb3db2b480f6c36c && git checkout --detach 20ebc2a5672860cc2490f8d6fb3db2b480f6c36c
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: utf8
+          HEAD_SHA: 20ebc2a5672860cc2490f8d6fb3db2b480f6c36c
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/StringSearchFormat.java", "test_task": ":Base:test", "test_classes": ["ghidra.features.base.memsearch.format.StringSearchFormatTest"], "class_counts": {"ghidra.features.base.memsearch.format.StringSearchFormatTest": 19}, "result_dir": "Ghidra/Features/Base/build/test-results/test", "total": 19, "failures": [["ghidra.features.base.memsearch.format.StringSearchFormatTest", "testInsensitiveUtf8LetterAfterTwoByteCharacter"], ["ghidra.features.base.memsearch.format.StringSearchFormatTest", "testInsensitiveUtf8LetterAfterThreeByteCharacter"], ["ghidra.features.base.memsearch.format.StringSearchFormatTest", "testInsensitiveUtf8LetterAfterFourByteCharacter"], ["ghidra.features.base.memsearch.format.StringSearchFormatTest", "testInsensitiveUtf8LettersAfterMixedCharacters"]]}'
+        run: python /tmp/utf8-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-utf8
+          path: native-evidence/
+          retention-days: 14
