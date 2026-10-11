@@ -1,0 +1,31 @@
+name: Enum eight byte residual bits native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/enum-width-native-gate.py /tmp/enum-width-native-gate.py
+      - run: git fetch origin 3d68b1f1c2e71eaa8c44e4fa40a65b684c9e563b && git checkout --detach 3d68b1f1c2e71eaa8c44e4fa40a65b684c9e563b
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: enum-width
+          HEAD_SHA: 3d68b1f1c2e71eaa8c44e4fa40a65b684c9e563b
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/EnumValuePartitioner.java", "test_task": ":SoftwareModeling:test", "test_classes": ["ghidra.program.model.data.EnumDataTypeTest"], "class_counts": {"ghidra.program.model.data.EnumDataTypeTest": 26}, "result_dir": "Ghidra/Framework/SoftwareModeling/build/test-results/test", "total": 26, "failures": [["ghidra.program.model.data.EnumDataTypeTest", "testEightByteCompoundKeepsUnnamedBits"], ["ghidra.program.model.data.EnumDataTypeTest", "testEightByteUnnamedValueRendersHex"]]}'
+        run: python /tmp/enum-width-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-enum-width
+          path: native-evidence/
+          retention-days: 14
