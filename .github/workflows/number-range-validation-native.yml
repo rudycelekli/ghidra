@@ -1,0 +1,32 @@
+name: Number range input validation native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/number-range-validation-native-gate.py /tmp/number-range-validation-native-gate.py
+      - run: git fetch origin 3eb7ca7215983a8b202cc9e75e176e304762cead && git checkout --detach 3eb7ca7215983a8b202cc9e75e176e304762cead
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: number-range-validation
+          HEAD_SHA: 3eb7ca7215983a8b202cc9e75e176e304762cead
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/NumberRangeInputDialog.java", "test_task": ":Base:integrationTest", "test_classes": ["docking.widgets.dialogs.NumberRangeInputDialogTest"], "class_counts": {"docking.widgets.dialogs.NumberRangeInputDialogTest": 12}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 12, "failures": [["docking.widgets.dialogs.NumberRangeInputDialogTest", "testIncompleteRangeIsRejected"], ["docking.widgets.dialogs.NumberRangeInputDialogTest", "testExtraRangeEndpointIsRejected"], ["docking.widgets.dialogs.NumberRangeInputDialogTest", "testReversedRangeIsRejected"], ["docking.widgets.dialogs.NumberRangeInputDialogTest", "testCorrectedInputDoesNotKeepEarlierPartialValues"]]}'
+        run: python /tmp/number-range-validation-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-number-range-validation
+          path: native-evidence/
+          retention-days: 14
