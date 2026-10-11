@@ -326,6 +326,7 @@ public class StringRenderParser {
 		val = (val << 4) + valHexDigit(c);
 		if (0 == (--codeDigits)) {
 			encodeCodePoint(out, val);
+			val = 0;
 			return State.STR;
 		}
 		return State.CODE_POINT;
