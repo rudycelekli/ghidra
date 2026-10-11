@@ -1,0 +1,44 @@
+name: Resource short read native validation
+on:
+  push:
+    branches: [validation/resource-short-read-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preserve validation helper and config
+        run: |
+          cp .github/resource-short-read-native-gate.py /tmp/resource-short-read-native-gate.py
+          cp .github/resource-short-read-native-config.json /tmp/resource-short-read-native-config.json
+          cp .github/ResourceShortReadProbe.java /tmp/ResourceShortReadProbe.java
+      - name: Checkout exact candidate
+        run: git fetch origin f1d809ef1608e256f947fcd74b172600caf19e23 && git checkout --detach f1d809ef1608e256f947fcd74b172600caf19e23
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Characterize actual native DEFLATE producer before regression validation
+        run: |
+          mkdir native-characterization
+          javac /tmp/ResourceShortReadProbe.java
+          java -cp /tmp ResourceShortReadProbe "$(git rev-parse HEAD)" > native-characterization/positive-short-read.json
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: resource-short-read
+          HEAD_SHA: f1d809ef1608e256f947fcd74b172600caf19e23
+        run: CONFIG="$(cat /tmp/resource-short-read-native-config.json)" python /tmp/resource-short-read-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-resource-short-read
+          path: |
+            native-evidence/
+            native-characterization/
+          retention-days: 14

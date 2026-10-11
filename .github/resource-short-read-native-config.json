@@ -1,0 +1,45 @@
+{
+  "language": "java",
+  "production": "Ghidra/Framework/Utility/src/main/java/utilities/util/FileUtilities.java",
+  "test_task": ":Generic:test",
+  "test_classes": [
+    "utilities.util.ResourceFileReadTest"
+  ],
+  "class_counts": {
+    "utilities.util.ResourceFileReadTest": 5
+  },
+  "total": 5,
+  "failures": [
+    [
+      "utilities.util.ResourceFileReadTest",
+      "testReadsCompleteDeflatedResource"
+    ],
+    [
+      "utilities.util.ResourceFileReadTest",
+      "testReadsDeflatedResourceRange"
+    ]
+  ],
+  "expected_cases": [
+    [
+      "utilities.util.ResourceFileReadTest",
+      "testReadsCompleteDeflatedResource"
+    ],
+    [
+      "utilities.util.ResourceFileReadTest",
+      "testReadsDeflatedResourceRange"
+    ],
+    [
+      "utilities.util.ResourceFileReadTest",
+      "testSmallDeflatedRangePreservesOffset"
+    ],
+    [
+      "utilities.util.ResourceFileReadTest",
+      "testRealFileCompleteReadPreservesBytes"
+    ],
+    [
+      "utilities.util.ResourceFileReadTest",
+      "testDeflatedResourcePrematureEofStillFails"
+    ]
+  ],
+  "result_dir": "Ghidra/Framework/Generic/build/test-results/test"
+}
