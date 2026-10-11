@@ -1,0 +1,33 @@
+name: RGB565 green channel native validation
+on:
+  push:
+    branches: [validation/rgb565-green-listing-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/rgb565-native-gate.py /tmp/rgb565-native-gate.py
+      - run: git fetch origin 26c2e8b42e04eadffb8468b06110507f84021611 && git checkout --detach 26c2e8b42e04eadffb8468b06110507f84021611
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: rgb565
+          HEAD_SHA: 26c2e8b42e04eadffb8468b06110507f84021611
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/RGB16ColorDataType.java", "test_task": ":SoftwareModeling:test", "test_classes": ["ghidra.program.model.data.RGB16ListingValueTest"], "class_counts": {"ghidra.program.model.data.RGB16ListingValueTest": 7}, "result_dir": "Ghidra/Framework/SoftwareModeling/build/test-results/test", "total": 7, "failures": [["ghidra.program.model.data.RGB16ListingValueTest", "testPureGreenLittleEndian"], ["ghidra.program.model.data.RGB16ListingValueTest", "testPureRedBigEndianHasNoGreen"], ["ghidra.program.model.data.RGB16ListingValueTest", "testLeastGreenBitLittleEndian"], ["ghidra.program.model.data.RGB16ListingValueTest", "testPureGreenBigEndianRepresentation"]], "expected_cases": [["ghidra.program.model.data.RGB16ListingValueTest", "testPureGreenLittleEndian"], ["ghidra.program.model.data.RGB16ListingValueTest", "testPureRedBigEndianHasNoGreen"], ["ghidra.program.model.data.RGB16ListingValueTest", "testLeastGreenBitLittleEndian"], ["ghidra.program.model.data.RGB16ListingValueTest", "testPureGreenBigEndianRepresentation"], ["ghidra.program.model.data.RGB16ListingValueTest", "testRgb555GreenControl"], ["ghidra.program.model.data.RGB16ListingValueTest", "testArgb1555GreenControl"], ["ghidra.program.model.data.RGB16ListingValueTest", "testUninitializedColorHasNoValue"]]}'
+        run: python /tmp/rgb565-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-rgb565
+          path: native-evidence/
+          retention-days: 14
