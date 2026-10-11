@@ -1,0 +1,36 @@
+name: TAR hard link identity native validation
+on:
+  push:
+    branches: [validation/tar-hardlink-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preserve validation helper and config
+        run: |
+          cp .github/tar-hardlink-native-gate.py /tmp/tar-hardlink-native-gate.py
+          cp .github/tar-hardlink-native-config.json /tmp/tar-hardlink-native-config.json
+      - name: Checkout exact candidate
+        run: git fetch origin fa4d3243c37a97b676f6645043c3106a1aef88f8 && git checkout --detach fa4d3243c37a97b676f6645043c3106a1aef88f8
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: tar-hardlink
+          HEAD_SHA: fa4d3243c37a97b676f6645043c3106a1aef88f8
+        run: CONFIG="$(cat /tmp/tar-hardlink-native-config.json)" python /tmp/tar-hardlink-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-tar-hardlink
+          path: native-evidence/
+          retention-days: 14

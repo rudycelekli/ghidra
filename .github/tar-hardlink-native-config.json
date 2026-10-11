@@ -1,0 +1,101 @@
+{
+  "language": "java",
+  "production": "Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/tar/TarFileSystem.java",
+  "test_task": ":FileFormats:test",
+  "test_classes": [
+    "ghidra.file.formats.tar.TarHardLinkTest"
+  ],
+  "class_counts": {
+    "ghidra.file.formats.tar.TarHardLinkTest": 12
+  },
+  "total": 12,
+  "failures": [
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testRootHardLinkContent"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testNestedHardLinkUsesArchiveRoot"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testHardLinkRetainsOriginalEntryAfterReplacement"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testHardLinkChainRetainsOriginalEntry"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testMissingTargetRejectedOnRead"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testForwardTargetRejectedOnRead"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testMixedHardAndSymbolicLinkCycleRejected"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testHardLinkToSymbolicLinkRetainsInodeMetadata"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testHardLinkedRelativeSymlinkUsesAliasParent"
+    ]
+  ],
+  "expected_cases": [
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testRootHardLinkContent"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testNestedHardLinkUsesArchiveRoot"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testHardLinkRetainsOriginalEntryAfterReplacement"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testHardLinkChainRetainsOriginalEntry"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testMissingTargetRejectedOnRead"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testForwardTargetRejectedOnRead"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testMixedHardAndSymbolicLinkCycleRejected"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testHardLinkToSymbolicLinkRetainsInodeMetadata"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testHardLinkedRelativeSymlinkUsesAliasParent"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testOrdinaryFile"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testRelativeSymbolicLink"
+    ],
+    [
+      "ghidra.file.formats.tar.TarHardLinkTest",
+      "testHardLinkWithStoredPaxDataUnchanged"
+    ]
+  ],
+  "result_dir": "Ghidra/Features/FileFormats/build/test-results/test"
+}
