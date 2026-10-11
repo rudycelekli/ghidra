@@ -18,9 +18,12 @@ with tempfile.TemporaryDirectory() as directory:
     subprocess.run(["javac", "-source", "21", "-target", "21", "-d", str(root / "classes"), str(dependency)], check=True)
     jar = root / "unique-owned-dependency.jar"
     subprocess.run(["jar", "--create", "--file", str(jar), "-C", str(root / "classes"), "."], check=True)
-    jpype.startJVM(classpath=[str(jar)])
+    jpype.startJVM()
     from java.lang import System
     receipt["java_version"] = str(System.getProperty("java.version"))
+    # Add only to the compiler property after JVM initialization: starting
+    # with this JAR on the JVM classpath opens it independently of javac.
+    System.setProperty("java.class.path", str(System.getProperty("java.class.path")) + os.pathsep + str(jar))
     def handles():
         found = []
         for fd in pathlib.Path("/proc/self/fd").iterdir():
@@ -59,7 +62,7 @@ with tempfile.TemporaryDirectory() as directory:
         # cannot contaminate the ownership measurement.
         from java.net import URLClassLoader
         from java.io import File
-        with URLClassLoader([File(str(output)).toURI().toURL()]) as loader:
+        with URLClassLoader([File(str(output)).toURI().toURL(), File(str(jar)).toURI().toURL()]) as loader:
             value = loader.loadClass("Consumer").getMethod("value").invoke(None)
             receipt["compiled_value"] = int(value)
             assert receipt["compiled_value"] == 42
