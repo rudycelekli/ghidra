@@ -1,0 +1,29 @@
+name: Investigate literal string round trips
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/string-literal-investigation-gate.py /tmp/string-literal-investigation-gate.py
+      - run: git fetch origin dbbf207089a74d03eb400dd5193d4af5989e52b3 && git checkout --detach dbbf207089a74d03eb400dd5193d4af5989e52b3
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Actual listing investigation and full build
+        env:
+          HEAD_SHA: dbbf207089a74d03eb400dd5193d4af5989e52b3
+        run: python /tmp/string-literal-investigation-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: string-literal-investigation
+          path: native-evidence/
+          retention-days: 14
