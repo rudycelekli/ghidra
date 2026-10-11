@@ -36,11 +36,12 @@ try:
   shutil.copytree(result,e/(phase+'-xml'))
   assert len(cases)==total,(phase,len(cases),total)
   assert not any(c['error']or c['skipped']for c in cases)
-  if phase=='baseline':assert (rc!=0 or kind=='float') and sum(c['failed']for c in cases)==failures
-  if phase=='baseline' and kind=='float':assert {c['name'] for c in cases if c['failed']}=={'testDoubleEncodingBelowMinimumSubnormal','testBigFloatEncodingBelowMinimumSubnormal','testFloatNarrowingBelowMinimumSubnormal','testMultiplyBelowMinimumSubnormal','testHalfEncodingBelowMinimumSubnormal','testQuadNarrowingBelowMinimumDoubleSubnormal'}
+  if phase=='baseline':
+   assert (rc!=0 or kind=='float') and sum(c['failed']for c in cases)==failures
+   if kind=='float':assert {c['name'] for c in cases if c['failed']}=={'testDoubleEncodingBelowMinimumSubnormal','testBigFloatEncodingBelowMinimumSubnormal','testFloatNarrowingBelowMinimumSubnormal','testMultiplyBelowMinimumSubnormal','testHalfEncodingBelowMinimumSubnormal','testQuadNarrowingBelowMinimumDoubleSubnormal'}
   else:assert rc==0 and not any(c['failed']for c in cases)
  if kind!='float':
-  full_rc=run('full-core',[python,'-m','pytest','Ghidra/Features/PyGhidra/src/main/py/tests/test_core.py','--junitxml='+str(e/'full-core.xml')]);full_cases=[{'name':c.get('name'),'failed':c.find('failure') is not None,'error':c.find('error') is not None,'skipped':c.find('skipped') is not None} for c in ET.parse(e/'full-core.xml').getroot().iter('testcase')];full_failures={c['name']for c in full_cases if c['failed']or c['error']};r['full_core']={'exit_code':full_rc,'cases':full_cases};save();assert full_failures==base_failures and full_rc==base_rc;assert not any(c['skipped']for c in full_cases);assert len(full_cases)==len(base_cases)+total
+  full_rc=run('full-core',[python,'-m','pytest','Ghidra/Features/PyGhidra/src/main/py/tests/test_core.py','--junitxml='+str(e/'full-core.xml')]);full_cases=[{'name':c.get('name'),'failed':c.find('failure') is not None,'error':c.find('error') is not None,'skipped':c.find('skipped') is not None} for c in ET.parse(e/'full-core.xml').getroot().iter('testcase')];full_failures={c['name']for c in full_cases if c['failed']or c['error']};r['full_core']={'exit_code':full_rc,'cases':full_cases};save();assert full_failures==base_failures and full_rc==base_rc;assert not any(c['skipped']for c in full_cases);assert len(full_cases)==len(base_cases)+total;original_names={c['name']for c in base_cases};original_fixed={c['name']: (c['failed'],c['error'],c['skipped'])for c in full_cases if c['name']in original_names};assert original_fixed=={c['name']:(c['failed'],c['error'],c['skipped'])for c in base_cases}
  assert run('full-build',g+['buildGhidra'])==0
  assert not subprocess.check_output(['git','diff','--name-only'],text=True).strip()
  r['status']='passed' if kind=='float' or not base_failures else 'target_passed_inherited_core_failures';r['full_build_passed']=True
