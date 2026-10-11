@@ -1,30 +1,38 @@
-name: Build Ghidra
-
+name: Next native contribution validation
 on: [push]
-
+permissions:
+  contents: read
 jobs:
-  build:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
-        platform: [ubuntu-latest]
-
-    runs-on: ${{ matrix.platform }}
+        include:
+          - kind: plugin
+            head: dd99a351a436aef1826bac4b3a26dd9b6ee2f305
+            config: '{"language": "python", "marker": "plugin", "production": "Ghidra/Features/PyGhidra/src/main/py/src/pyghidra/launcher.py", "test_path": "Ghidra/Features/PyGhidra/src/main/py/tests/test_plugin.py", "pattern": "failed_script_copy_preserves_installation_ownership", "total": 2, "failures": ["test_failed_script_copy_preserves_installation_ownership[False]"]}'
     steps:
-
-      - name: Checkout repository
-        uses: actions/checkout@v6
-  
-      - name: Read Ghidra JDK Version
-        run: echo "JDK_VER=$(awk -F'=' '$1=="application.java.min" {print $2}' Ghidra/application.properties)" >> $GITHUB_ENV 
-
-      - name: Setup JDK
-        uses: actions/setup-java@v5
+      - uses: actions/checkout@v6
+      - run: cp .github/next-native-gate.py /tmp/next-native-gate.py
+      - run: git fetch origin ${{ matrix.head }} && git checkout --detach ${{ matrix.head }}
+      - uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
-          java-version: '${{ env.JDK_VER }}'
-
-      - name: Fetch Dependencies
-        run: ./gradlew -I gradle/support/fetchDependencies.gradle -DhideDownloadProgress -DnoEclipse
-
-      - name: Build Ghidra
-        run: ./gradlew buildGhidra --parallel
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: ${{ matrix.kind }}
+          HEAD_SHA: ${{ matrix.head }}
+          CONFIG: ${{ matrix.config }}
+        run: python /tmp/next-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-${{ matrix.kind }}
+          path: native-evidence/
+          retention-days: 14
