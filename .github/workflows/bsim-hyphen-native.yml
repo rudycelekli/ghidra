@@ -1,0 +1,32 @@
+name: BSim hyphenated database names native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/bsim-hyphen-native-gate.py /tmp/bsim-hyphen-native-gate.py
+      - run: git fetch origin 4288bdb051cba37c059a8939df471c77571d4bae && git checkout --detach 4288bdb051cba37c059a8939df471c77571d4bae
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: bsim-hyphen
+          HEAD_SHA: 4288bdb051cba37c059a8939df471c77571d4bae
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/dialog/CreateBsimServerInfoDialog.java", "test_task": ":BSim:integrationTest", "test_classes": ["ghidra.features.bsim.gui.search.dialog.CreateBsimServerInfoDialogTest"], "class_counts": {"ghidra.features.bsim.gui.search.dialog.CreateBsimServerInfoDialogTest": 4}, "result_dir": "Ghidra/Features/BSim/build/test-results/integrationTest", "total": 4, "failures": [["ghidra.features.bsim.gui.search.dialog.CreateBsimServerInfoDialogTest", "testPostgresHyphenatedNameAcceptedLikeCli"], ["ghidra.features.bsim.gui.search.dialog.CreateBsimServerInfoDialogTest", "testElasticHyphenatedNameAcceptedLikeCli"]]}'
+        run: python /tmp/bsim-hyphen-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-bsim-hyphen
+          path: native-evidence/
+          retention-days: 14
