@@ -1,30 +1,45 @@
-name: Build Ghidra
-
+name: Compiler and numeric native validation
 on: [push]
-
+permissions:
+  contents: read
 jobs:
-  build:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
-        platform: [ubuntu-latest]
-
-    runs-on: ${{ matrix.platform }}
+        include:
+          - kind: javac
+            head: 4a2410cada82375388e1139aad8db2be348f9f3b
+            runner: javac-native-gate.py
+            config: '{}'
+          - kind: numeric
+            head: 346935495ed655653ed839df57516f3258fe5124
+            runner: next-native-gate.py
+            config: '{"language": "java", "production": "Ghidra/Framework/Generic/src/main/java/ghidra/util/NumericUtilities.java", "test_task": ":Generic:test", "test_class": "ghidra.util.NumericUtilitiesTest", "result_dir": "Ghidra/Framework/Generic/build/test-results/test", "total": 21, "failures": ["testDecodeBigIntegerPositiveZero", "testDecodeBigIntegerNegativeZero"]}'
     steps:
-
-      - name: Checkout repository
-        uses: actions/checkout@v6
-  
-      - name: Read Ghidra JDK Version
-        run: echo "JDK_VER=$(awk -F'=' '$1=="application.java.min" {print $2}' Ghidra/application.properties)" >> $GITHUB_ENV 
-
-      - name: Setup JDK
-        uses: actions/setup-java@v5
+      - uses: actions/checkout@v6
+      - run: cp .github/${{ matrix.runner }} /tmp/native-gate.py
+      - run: git fetch origin ${{ matrix.head }} && git checkout --detach ${{ matrix.head }}
+      - uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
-          java-version: '${{ env.JDK_VER }}'
-
-      - name: Fetch Dependencies
-        run: ./gradlew -I gradle/support/fetchDependencies.gradle -DhideDownloadProgress -DnoEclipse
-
-      - name: Build Ghidra
-        run: ./gradlew buildGhidra --parallel
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: ${{ matrix.kind }}
+          HEAD_SHA: ${{ matrix.head }}
+          CONFIG: ${{ matrix.config }}
+          CANDIDATE_KIND: ${{ matrix.kind }}
+          CANDIDATE_HEAD: ${{ matrix.head }}
+        run: python /tmp/native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-${{ matrix.kind }}
+          path: native-evidence/
+          retention-days: 14
