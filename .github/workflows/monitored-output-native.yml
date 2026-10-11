@@ -1,0 +1,36 @@
+name: Monitored output cancellation native validation
+on:
+  push:
+    branches: [validation/monitored-output-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preserve validation helper and config
+        run: |
+          cp .github/monitored-output-native-gate.py /tmp/monitored-output-native-gate.py
+          cp .github/monitored-output-native-config.json /tmp/monitored-output-native-config.json
+      - name: Checkout exact candidate
+        run: git fetch origin adda41ec9d0d81b19dad197fa71e9be9f9d07bf2 && git checkout --detach adda41ec9d0d81b19dad197fa71e9be9f9d07bf2
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: monitored-output-cancel
+          HEAD_SHA: adda41ec9d0d81b19dad197fa71e9be9f9d07bf2
+        run: CONFIG="$(cat /tmp/monitored-output-native-config.json)" python /tmp/monitored-output-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-monitored-output-cancel
+          path: native-evidence/
+          retention-days: 14

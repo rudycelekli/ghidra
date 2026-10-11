@@ -1,0 +1,65 @@
+{
+  "language": "java",
+  "production": "Ghidra/Framework/Utility/src/main/java/ghidra/util/MonitoredOutputStream.java",
+  "test_task": ":Generic:test",
+  "test_classes": [
+    "ghidra.util.MonitoredOutputStreamTest"
+  ],
+  "class_counts": {
+    "ghidra.util.MonitoredOutputStreamTest": 8
+  },
+  "total": 8,
+  "failures": [
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testCanceledSingleByteDoesNotWrite"
+    ],
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testCanceledShortBufferDoesNotWrite"
+    ],
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testCanceledActualCopyDoesNotWriteSmallFile"
+    ],
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testCancellationDuringSourceReadStopsNextWrite"
+    ]
+  ],
+  "expected_cases": [
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testCanceledSingleByteDoesNotWrite"
+    ],
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testCanceledShortBufferDoesNotWrite"
+    ],
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testCanceledActualCopyDoesNotWriteSmallFile"
+    ],
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testCancellationDuringSourceReadStopsNextWrite"
+    ],
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testSuccessfulSmallCopyPreservesDataAndOutputOwnership"
+    ],
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testProgressStillUpdatesAtBufferBoundary"
+    ],
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testCanceledZeroLengthWriteRemainsNoOp"
+    ],
+    [
+      "ghidra.util.MonitoredOutputStreamTest",
+      "testCanceledZeroLengthWriteStillValidatesArguments"
+    ]
+  ],
+  "result_dir": "Ghidra/Framework/Generic/build/test-results/test"
+}
