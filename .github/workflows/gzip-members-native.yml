@@ -1,0 +1,36 @@
+name: Gzip concatenated members native validation
+on:
+  push:
+    branches: [validation/gzip-members-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preserve validation helper and config
+        run: |
+          cp .github/gzip-members-native-gate.py /tmp/gzip-members-native-gate.py
+          cp .github/gzip-members-native-config.json /tmp/gzip-members-native-config.json
+      - name: Checkout exact candidate
+        run: git fetch origin 43537342673c53f9f1e958b734e312f943c488b4 && git checkout --detach 43537342673c53f9f1e958b734e312f943c488b4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: gzip-members
+          HEAD_SHA: 43537342673c53f9f1e958b734e312f943c488b4
+        run: CONFIG="$(cat /tmp/gzip-members-native-config.json)" python /tmp/gzip-members-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-gzip-members
+          path: native-evidence/
+          retention-days: 14

@@ -1,0 +1,49 @@
+{
+  "language": "java",
+  "production": "Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipFileSystemFactory.java",
+  "test_task": ":FileFormats:test",
+  "test_classes": [
+    "ghidra.file.formats.gzip.GZipFileSystemFactoryTest"
+  ],
+  "class_counts": {
+    "ghidra.file.formats.gzip.GZipFileSystemFactoryTest": 6
+  },
+  "total": 6,
+  "failures": [
+    [
+      "ghidra.file.formats.gzip.GZipFileSystemFactoryTest",
+      "testConcatenatedMembersProduceCompletePayload"
+    ],
+    [
+      "ghidra.file.formats.gzip.GZipFileSystemFactoryTest",
+      "testEmptyFirstMemberRetainsFollowingPayload"
+    ]
+  ],
+  "expected_cases": [
+    [
+      "ghidra.file.formats.gzip.GZipFileSystemFactoryTest",
+      "testConcatenatedMembersProduceCompletePayload"
+    ],
+    [
+      "ghidra.file.formats.gzip.GZipFileSystemFactoryTest",
+      "testEmptyFirstMemberRetainsFollowingPayload"
+    ],
+    [
+      "ghidra.file.formats.gzip.GZipFileSystemFactoryTest",
+      "testSingleMemberPayload"
+    ],
+    [
+      "ghidra.file.formats.gzip.GZipFileSystemFactoryTest",
+      "testSingleEmptyMemberPayload"
+    ],
+    [
+      "ghidra.file.formats.gzip.GZipFileSystemFactoryTest",
+      "testConcatenatedEmptyMembersPayload"
+    ],
+    [
+      "ghidra.file.formats.gzip.GZipFileSystemFactoryTest",
+      "testMetadataStillComesFromFirstMember"
+    ]
+  ],
+  "result_dir": "Ghidra/Features/FileFormats/build/test-results/test"
+}
