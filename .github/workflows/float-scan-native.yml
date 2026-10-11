@@ -1,0 +1,31 @@
+name: Float memory scan native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/float-scan-native-gate.py /tmp/float-scan-native-gate.py
+      - run: git fetch origin ce51ae159e22cb425c20e01301a5416d016e6296 && git checkout --detach ce51ae159e22cb425c20e01301a5416d016e6296
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: float-scan
+          HEAD_SHA: ce51ae159e22cb425c20e01301a5416d016e6296
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/FloatSearchFormat.java", "test_task": ":Base:test", "test_classes": ["ghidra.features.base.memsearch.format.FloatSearchFormatTest"], "class_counts": {"ghidra.features.base.memsearch.format.FloatSearchFormatTest": 23}, "result_dir": "Ghidra/Features/Base/build/test-results/test", "total": 23, "failures": [["ghidra.features.base.memsearch.format.FloatSearchFormatTest", "testScanChangedValuesAfterLeadingNaNs"], ["ghidra.features.base.memsearch.format.FloatSearchFormatTest", "testScanChangedValuesAfterMiddleNaN"]]}'
+        run: python /tmp/float-scan-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-float-scan
+          path: native-evidence/
+          retention-days: 14
