@@ -1,0 +1,32 @@
+name: Comment window offcut data native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/comment-window-offcut-native-gate.py /tmp/comment-window-offcut-native-gate.py
+      - run: git fetch origin 579e18a7c349724205cfe3c28ba239b4203426fe && git checkout --detach 579e18a7c349724205cfe3c28ba239b4203426fe
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: comment-window-offcut
+          HEAD_SHA: 579e18a7c349724205cfe3c28ba239b4203426fe
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/commentwindow/CommentTableModel.java", "test_task": ":Base:integrationTest", "test_classes": ["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "ghidra.app.plugin.core.commentwindow.CommentWindowPluginTest"], "class_counts": {"ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest": 7, "ghidra.app.plugin.core.commentwindow.CommentWindowPluginTest": 5}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 12, "failures": [["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testOffcutOnlyCommentSurvivesWindowReopen"], ["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testParentCommentDoesNotSupplyOffcutType"], ["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testAllOffcutCommentTypesRemainAtActualAddress"], ["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testLiveAddedOffcutCommentSurvivesReload"]], "expected_cases": [["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testOffcutOnlyCommentSurvivesWindowReopen"], ["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testParentCommentDoesNotSupplyOffcutType"], ["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testAllOffcutCommentTypesRemainAtActualAddress"], ["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testLiveAddedOffcutCommentSurvivesReload"], ["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testParentCommentKeepsActualTypeAndText"], ["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testParentAndOffcutSameTypeKeepSeparateText"], ["ghidra.app.plugin.core.commentwindow.CommentWindowOffcutDataTest", "testOffcutInstructionCommentRemainsExcluded"], ["ghidra.app.plugin.core.commentwindow.CommentWindowPluginTest", "testNavigation"], ["ghidra.app.plugin.core.commentwindow.CommentWindowPluginTest", "testCommentRemovedAndRestored"], ["ghidra.app.plugin.core.commentwindow.CommentWindowPluginTest", "testCommentAddedAndRestored"], ["ghidra.app.plugin.core.commentwindow.CommentWindowPluginTest", "testCommentChangedAndRestored"], ["ghidra.app.plugin.core.commentwindow.CommentWindowPluginTest", "testProgramClose"]]}'
+        run: python /tmp/comment-window-offcut-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-comment-window-offcut
+          path: native-evidence/
+          retention-days: 14
