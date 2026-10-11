@@ -1,0 +1,32 @@
+name: Signed enum editor value allocation native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/enum-editor-signed-allocation-native-gate.py /tmp/enum-editor-signed-allocation-native-gate.py
+      - run: git fetch origin f0b93564f70b1df7349b3e1f060cef7fe521416d && git checkout --detach f0b93564f70b1df7349b3e1f060cef7fe521416d
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: enum-editor-signed-allocation
+          HEAD_SHA: f0b93564f70b1df7349b3e1f060cef7fe521416d
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/editor/EnumTableModel.java", "test_task": ":Base:integrationTest", "test_classes": ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test"], "class_counts": {"ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest": 9, "ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test": 21}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 30, "failures": [["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testSignedEnumWithFilledNonnegativeRangeUsesNegativeValue"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testSignedEnumFindsLastNegativeHole"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testSignedAliasesDoNotHideNegativeCapacity"]], "expected_cases": [["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testSignedEnumWithFilledNonnegativeRangeUsesNegativeValue"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testSignedEnumFindsLastNegativeHole"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testSignedAliasesDoNotHideNegativeCapacity"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testOrdinarySelectedSuccessorIsPreserved"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testUnsignedMaximumWrapsToZero"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testNegativeSelectedSuccessorIsPreserved"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testEmptyEnumStartsAtZero"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testEightByteMaximumWrapsWithoutOverflow"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditorSignedAllocationTest", "testGenuinelyFullSignedEnumDoesNotAddAlias"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testInsertRow"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testSortColumns"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testSortOnComments"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testSortOrder"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testInsertRowByName"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testDeleteRows"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testDeleteAllRows"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testEmptyEnum"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testCloseEditorWithError"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testCloseEditorWithErrorNoSave"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testCloseEditorWithErrorCancel"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testDeleteFirstRow"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testEditName"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testEditName_RowChanges_NavigationWithTab"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testDuplicateName"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testNameTrim"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testDescriptionTrim"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testDuplicateValue"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testEditDescription"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testClearDescription"], ["ghidra.app.plugin.core.datamgr.editor.EnumEditor2Test", "testMoveColumns"]]}'
+        run: python /tmp/enum-editor-signed-allocation-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-enum-editor-signed-allocation
+          path: native-evidence/
+          retention-days: 14
