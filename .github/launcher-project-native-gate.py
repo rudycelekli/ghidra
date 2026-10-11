@@ -22,7 +22,7 @@ try:
   assert run('runtime',g+[':PyGhidra:jar',':LaunchSupport:jar',':JVM:jar',':JVM:sleighCompile',':PyGhidra:prepPyGhidra'])==0
   python=str(p/'build/venv/bin/python3');assert run('pytest-install',[python,'-m','pip','install','pytest','pytest-datadir'])==0
   os.environ['GHIDRA_INSTALL_DIR']=str(p)
-  configs={'launch-properties':('launcher.py','launch_properties_commented_java_home',5,3),'project-setup':('core.py','project_setup',5,4)}
+  configs={'launch-properties':('launcher.py','launch_properties_commented_java_home',6,4),'project-setup':('core.py','project_setup',5,4)}
   production,pattern,total,failures=configs[kind]
   prod='Ghidra/Features/PyGhidra/src/main/py/src/pyghidra/'+production
   cmd=[python,'-m','pytest','-p','no:cacheprovider','Ghidra/Features/PyGhidra/src/main/py/tests/test_core.py','-k',pattern];result=e/'pytest';result.mkdir()

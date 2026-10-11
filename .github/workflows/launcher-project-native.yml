@@ -13,7 +13,7 @@ jobs:
       matrix:
         include:
           - kind: launch-properties
-            head: 0d9891bc18f3ae9ab401f6173df25b9c242a9812
+            head: b5c65c7c73219b47603f47135742cbad67bac01a
           - kind: project-setup
             head: d40e1e93437b721de554b810b0f4ea257568fefa
     steps:
