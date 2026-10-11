@@ -1,0 +1,33 @@
+name: Boolean listing encoding native validation
+on:
+  push:
+    branches: [validation/boolean-listing-encoding-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/boolean-encoding-native-gate.py /tmp/boolean-encoding-native-gate.py
+      - run: git fetch origin a67fe3c46e331d699b4ba360d801dc3a34adaafc && git checkout --detach a67fe3c46e331d699b4ba360d801dc3a34adaafc
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: boolean-encoding
+          HEAD_SHA: a67fe3c46e331d699b4ba360d801dc3a34adaafc
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/BooleanDataType.java", "test_task": ":SoftwareModeling:test", "test_classes": ["ghidra.program.model.data.BooleanListingEncodingTest"], "class_counts": {"ghidra.program.model.data.BooleanListingEncodingTest": 8}, "result_dir": "Ghidra/Framework/SoftwareModeling/build/test-results/test", "total": 8, "failures": [["ghidra.program.model.data.BooleanListingEncodingTest", "testRenderedFalseCanBePatched"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testRenderedTrueCanBePatched"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testNonzeroTrueUsesCanonicalEncoding"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testTypedFalseCanBeEncoded"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testTypedTrueCanBeEncoded"]], "expected_cases": [["ghidra.program.model.data.BooleanListingEncodingTest", "testRenderedFalseCanBePatched"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testRenderedTrueCanBePatched"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testNonzeroTrueUsesCanonicalEncoding"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testTypedFalseCanBeEncoded"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testTypedTrueCanBeEncoded"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testExistingNumericHexEncodingPreserved"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testInvalidRepresentationRejected"], ["ghidra.program.model.data.BooleanListingEncodingTest", "testLengthMismatchRejected"]]}'
+        run: python /tmp/boolean-encoding-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-boolean-encoding
+          path: native-evidence/
+          retention-days: 14
