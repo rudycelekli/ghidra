@@ -1,30 +1,42 @@
-name: Build Ghidra
-
+name: Native contribution validation
 on: [push]
-
+permissions:
+  contents: read
 jobs:
-  build:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
-        platform: [ubuntu-latest]
-
-    runs-on: ${{ matrix.platform }}
+        include:
+          - kind: float
+            head: c8484ce2ec78fef0ffeecf4b6b78bd69044191dc
+          - kind: script
+            head: 0c0f2b4ef6179012e8e26fee0153af232b2e9225
+          - kind: analysis
+            head: 4d99efa5dead2b9bb8ea5a6f89c5fb9c51a89882
     steps:
-
-      - name: Checkout repository
-        uses: actions/checkout@v6
-  
-      - name: Read Ghidra JDK Version
-        run: echo "JDK_VER=$(awk -F'=' '$1=="application.java.min" {print $2}' Ghidra/application.properties)" >> $GITHUB_ENV 
-
-      - name: Setup JDK
-        uses: actions/setup-java@v5
+      - uses: actions/checkout@v6
+      - name: Preserve validation runner
+        run: cp .github/hosted-native-gate.py /tmp/hosted-native-gate.py
+      - name: Checkout exact candidate
+        run: git fetch origin ${{ matrix.head }} && git checkout --detach ${{ matrix.head }}
+      - uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
-          java-version: '${{ env.JDK_VER }}'
-
-      - name: Fetch Dependencies
-        run: ./gradlew -I gradle/support/fetchDependencies.gradle -DhideDownloadProgress -DnoEclipse
-
-      - name: Build Ghidra
-        run: ./gradlew buildGhidra --parallel
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed, regression, and full build
+        env:
+          CANDIDATE_KIND: ${{ matrix.kind }}
+          CANDIDATE_HEAD: ${{ matrix.head }}
+        run: python /tmp/hosted-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-${{ matrix.kind }}
+          path: native-evidence/
+          retention-days: 14
