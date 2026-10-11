@@ -1,0 +1,32 @@
+name: Normalized address range boundary native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/sorted-range-boundaries-native-gate.py /tmp/sorted-range-boundaries-native-gate.py
+      - run: git fetch origin 2aff97b5c73b2c86a5e92889494ff62327f0d1f2 && git checkout --detach 2aff97b5c73b2c86a5e92889494ff62327f0d1f2
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: sorted-range-boundaries
+          HEAD_SHA: 2aff97b5c73b2c86a5e92889494ff62327f0d1f2
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SortedRangeList.java", "test_task": ":Base:integrationTest", "test_classes": ["ghidra.program.database.map.NormalizedAddressSetTest"], "class_counts": {"ghidra.program.database.map.NormalizedAddressSetTest": 18}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 18, "failures": [["ghidra.program.database.map.NormalizedAddressSetTest", "testContainedHighAddressRangeRemainsUnique"], ["ghidra.program.database.map.NormalizedAddressSetTest", "testLowestAddressRangeCanGrowFromSameStart"]]}'
+        run: python /tmp/sorted-range-boundaries-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-sorted-range-boundaries
+          path: native-evidence/
+          retention-days: 14
