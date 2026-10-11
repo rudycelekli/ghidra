@@ -1,0 +1,30 @@
+name: Investigate decompiler equate reconversion
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/equate-reconversion-investigation-gate.py /tmp/equate-reconversion-investigation-gate.py
+      - run: git fetch origin e06d8b083b7bdc56411e98b9810b2866d612ed96 && git checkout --detach e06d8b083b7bdc56411e98b9810b2866d612ed96
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Actual listing investigation and full build
+        env:
+          HEAD_SHA: e06d8b083b7bdc56411e98b9810b2866d612ed96
+        run: python /tmp/equate-reconversion-investigation-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: equate-reconversion-investigation
+          path: native-evidence/
+          retention-days: 14
