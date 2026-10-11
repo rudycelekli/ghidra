@@ -1,0 +1,31 @@
+name: PyGhidra monitor cancellation native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/monitor-cancel-native-gate.py /tmp/monitor-cancel-native-gate.py
+      - run: git fetch origin 17b3507131a3a8b6e723783ed05aaa2b24b8f7c9 && git checkout --detach 17b3507131a3a8b6e723783ed05aaa2b24b8f7c9
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: monitor-cancel
+          HEAD_SHA: 17b3507131a3a8b6e723783ed05aaa2b24b8f7c9
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/PyGhidraTaskMonitor.java", "test_task": ":PyGhidra:test", "result_dir": "Ghidra/Features/PyGhidra/build/test-results/test", "total": 6, "test_classes": ["ghidra.pyghidra.PyGhidraTaskMonitorTest"], "class_counts": {"ghidra.pyghidra.PyGhidraTaskMonitorTest": 6}, "failures": [["ghidra.pyghidra.PyGhidraTaskMonitorTest", "testCancelNotifiesListenerWithCancelledState"], ["ghidra.pyghidra.PyGhidraTaskMonitorTest", "testTimeoutNotifiesCancelledListener"], ["ghidra.pyghidra.PyGhidraTaskMonitorTest", "testRepeatedCancelAndResetNotifications"], ["ghidra.pyghidra.PyGhidraTaskMonitorTest", "testListenerExceptionPreservesCancelledState"], ["ghidra.pyghidra.PyGhidraTaskMonitorTest", "testCancelUnblocksActualFilesystemStreamCopy"]]}'
+        run: python /tmp/monitor-cancel-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-monitor-cancel
+          path: native-evidence/
+          retention-days: 14
