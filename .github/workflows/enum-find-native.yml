@@ -1,0 +1,32 @@
+name: Enum value search width native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/enum-find-native-gate.py /tmp/enum-find-native-gate.py
+      - run: git fetch origin a5acc6d6b4008794efc231c0971753add2d29750 && git checkout --detach a5acc6d6b4008794efc231c0971753add2d29750
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: enum-find
+          HEAD_SHA: a5acc6d6b4008794efc231c0971753add2d29750
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/actions/FindEnumsByValueAction.java", "test_task": ":Base:integrationTest", "test_classes": ["ghidra.app.plugin.core.datamgr.FindEnumsByValueWidthTest"], "class_counts": {"ghidra.app.plugin.core.datamgr.FindEnumsByValueWidthTest": 4}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 4, "failures": [["ghidra.app.plugin.core.datamgr.FindEnumsByValueWidthTest", "testLargePositiveEnumValueDoesNotAliasZero"], ["ghidra.app.plugin.core.datamgr.FindEnumsByValueWidthTest", "testLargeNegativeEnumValueDoesNotAliasZero"], ["ghidra.app.plugin.core.datamgr.FindEnumsByValueWidthTest", "testUnsigned32AndSignedNegativeAliasesRemainAccepted"]]}'
+        run: python /tmp/enum-find-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-enum-find
+          path: native-evidence/
+          retention-days: 14
