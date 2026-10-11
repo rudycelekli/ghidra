@@ -1,0 +1,32 @@
+name: Zero byte selection validation native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/select-bytes-zero-native-gate.py /tmp/select-bytes-zero-native-gate.py
+      - run: git fetch origin 03afb719687adbf87404d7fc9d126ff660542f13 && git checkout --detach 03afb719687adbf87404d7fc9d126ff660542f13
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: select-bytes-zero
+          HEAD_SHA: 03afb719687adbf87404d7fc9d126ff660542f13
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/select/SelectBytesDialog.java", "test_task": ":Base:integrationTest", "test_classes": ["ghidra.app.plugin.core.select.SelectBytesPluginTest"], "class_counts": {"ghidra.app.plugin.core.select.SelectBytesPluginTest": 16}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 16, "failures": [["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testForwardHexZeroLengthPreservesSelection"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testBackwardHexZeroLengthPreservesSelection"]], "expected_cases": [["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testActionEnablement"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testSelectAll"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testSelectForward"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testBadInput"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testSelectBackward"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testSelectToAddr"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testSelectForward_OverlayBlock"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testSelectForward_OverlayBlock_LengthLargerThanBlock"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testSelectBackward_OverlayBlock"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testSelectBackward_OverlayBlock_LengthLargerThanBlock"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testSegmentedProgram"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testCloseProgram"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testForwardZeroLengthPreservesSelection"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testBackwardZeroLengthPreservesSelection"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testForwardHexZeroLengthPreservesSelection"], ["ghidra.app.plugin.core.select.SelectBytesPluginTest", "testBackwardHexZeroLengthPreservesSelection"]]}'
+        run: python /tmp/select-bytes-zero-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-select-bytes-zero
+          path: native-evidence/
+          retention-days: 14
