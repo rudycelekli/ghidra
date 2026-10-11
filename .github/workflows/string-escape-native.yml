@@ -1,0 +1,33 @@
+name: String escape encoding native validation
+on:
+  push:
+    branches: [validation/string-escape-native-corrected-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/string-escape-native-gate.py /tmp/string-escape-native-gate.py
+      - run: git fetch origin 7f3f1135cb6d2f7edaf4d94e85a0cc95fdde578b && git checkout --detach 7f3f1135cb6d2f7edaf4d94e85a0cc95fdde578b
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: string-escape
+          HEAD_SHA: 7f3f1135cb6d2f7edaf4d94e85a0cc95fdde578b
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StringRenderParser.java", "test_task": ":SoftwareModeling:test", "test_classes": ["ghidra.program.model.data.StringEscapeEncodingTest"], "class_counts": {"ghidra.program.model.data.StringEscapeEncodingTest": 8}, "result_dir": "Ghidra/Framework/SoftwareModeling/build/test-results/test", "total": 8, "failures": [["ghidra.program.model.data.StringEscapeEncodingTest", "testConsecutiveByteEscapes"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testMixedWideAndByteEscapes"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testSupplementaryEscapeThenLiteralAndByteEscape"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testAsciiByteEscapes"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testConsecutiveFourDigitEscapes"]], "expected_cases": [["ghidra.program.model.data.StringEscapeEncodingTest", "testConsecutiveByteEscapes"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testMixedWideAndByteEscapes"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testSupplementaryEscapeThenLiteralAndByteEscape"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testAsciiByteEscapes"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testConsecutiveFourDigitEscapes"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testEightDigitEscapesRemainValid"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testOrdinaryRepresentationRoundTrip"], ["ghidra.program.model.data.StringEscapeEncodingTest", "testResetReusesParser"]]}'
+        run: python /tmp/string-escape-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-string-escape
+          path: native-evidence/
+          retention-days: 14
