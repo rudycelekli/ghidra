@@ -1,0 +1,32 @@
+name: Project folder file index native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/folder-index-native-gate.py /tmp/folder-index-native-gate.py
+      - run: git fetch origin 8f5822a7f70a7c315eba38127d5b8d3926e1b59c && git checkout --detach 8f5822a7f70a7c315eba38127d5b8d3926e1b59c
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: folder-index
+          HEAD_SHA: 8f5822a7f70a7c315eba38127d5b8d3926e1b59c
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainFileIndex.java", "test_task": ":Base:integrationTest", "test_classes": ["ghidra.framework.data.ProjectFileIndexFolderChangeTest"], "class_counts": {"ghidra.framework.data.ProjectFileIndexFolderChangeTest": 7}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 7, "failures": [["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testCachedIdsSurviveParentRename"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testCachedIdsSurviveParentMove"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testFileRenameKeepsIdLookup"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testReusedOldPathDoesNotReturnReplacementFile"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testReusedOldPathDoesNotResetOriginalIdOnLaterRename"]], "expected_cases": [["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testCachedIdsSurviveParentRename"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testCachedIdsSurviveParentMove"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testFileRenameKeepsIdLookup"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testReusedOldPathDoesNotReturnReplacementFile"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testReusedOldPathDoesNotResetOriginalIdOnLaterRename"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testUnrelatedFileIsUnaffectedByFolderRename"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testDeletedFileHasNoIdLookup"]]}'
+        run: python /tmp/folder-index-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-folder-index
+          path: native-evidence/
+          retention-days: 14
