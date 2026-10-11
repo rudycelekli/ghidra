@@ -1,0 +1,35 @@
+name: Javac ownership qualification
+on:
+  push:
+    branches: [validation/javac-ownership-20261011]
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        phase: [baseline, fixed]
+        outcome: [success, error]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install JPype1==1.6.0
+      - name: Real compiler ownership qualification
+        run: |
+          mkdir -p native-evidence
+          python .github/javac-native-qualification.py --source Ghidra/Features/PyGhidra/src/main/py/src/pyghidra/javac.py --phase ${{ matrix.phase }} --outcome ${{ matrix.outcome }} > native-evidence/receipt.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: javac-${{ matrix.phase }}-${{ matrix.outcome }}
+          path: native-evidence/
+          retention-days: 14
