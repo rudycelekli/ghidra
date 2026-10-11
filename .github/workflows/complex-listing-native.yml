@@ -1,0 +1,33 @@
+name: Complex listing value native validation
+on:
+  push:
+    branches: [validation/complex-listing-values-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/complex-listing-native-gate.py /tmp/complex-listing-native-gate.py
+      - run: git fetch origin 7b9160843919d0695da602a5120861735b8b67d0 && git checkout --detach 7b9160843919d0695da602a5120861735b8b67d0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: complex-listing
+          HEAD_SHA: 7b9160843919d0695da602a5120861735b8b67d0
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractComplexDataType.java", "test_task": ":SoftwareModeling:test", "test_classes": ["ghidra.program.model.data.ComplexListingValueTest"], "class_counts": {"ghidra.program.model.data.ComplexListingValueTest": 7}, "result_dir": "Ghidra/Framework/SoftwareModeling/build/test-results/test", "total": 7, "failures": [["ghidra.program.model.data.ComplexListingValueTest", "testFloatComponentsLittleEndian"], ["ghidra.program.model.data.ComplexListingValueTest", "testDoubleComponentsBigEndian"], ["ghidra.program.model.data.ComplexListingValueTest", "testFloatSignedZeroAndInfinity"], ["ghidra.program.model.data.ComplexListingValueTest", "testDoubleNaNAndInfinity"], ["ghidra.program.model.data.ComplexListingValueTest", "testQuadPrecisionComponentsBothEndian"], ["ghidra.program.model.data.ComplexListingValueTest", "testUninitializedComplexHasNoValue"]], "expected_cases": [["ghidra.program.model.data.ComplexListingValueTest", "testFloatComponentsLittleEndian"], ["ghidra.program.model.data.ComplexListingValueTest", "testDoubleComponentsBigEndian"], ["ghidra.program.model.data.ComplexListingValueTest", "testFloatSignedZeroAndInfinity"], ["ghidra.program.model.data.ComplexListingValueTest", "testDoubleNaNAndInfinity"], ["ghidra.program.model.data.ComplexListingValueTest", "testQuadPrecisionComponentsBothEndian"], ["ghidra.program.model.data.ComplexListingValueTest", "testUninitializedComplexHasNoValue"], ["ghidra.program.model.data.ComplexListingValueTest", "testComplexDatatypeIsAvailableBuiltin"]]}'
+        run: python /tmp/complex-listing-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-complex-listing
+          path: native-evidence/
+          retention-days: 14
