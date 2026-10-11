@@ -1,0 +1,33 @@
+name: Java character listing native validation
+on:
+  push:
+    branches: [validation/java-char-values-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/java-char-native-gate.py /tmp/java-char-native-gate.py
+      - run: git fetch origin 8088df2e82f1c1cefdfa5a4ee9843bf6eb49f746 && git checkout --detach 8088df2e82f1c1cefdfa5a4ee9843bf6eb49f746
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: java-char
+          HEAD_SHA: 8088df2e82f1c1cefdfa5a4ee9843bf6eb49f746
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/CharDataType.java", "test_task": ":JVM:test", "test_classes": ["ghidra.javaclass.test.JavaCharListingValueTest", "ghidra.javaclass.test.DescriptorDecoderTest"], "class_counts": {"ghidra.javaclass.test.JavaCharListingValueTest": 8, "ghidra.javaclass.test.DescriptorDecoderTest": 13}, "result_dir": "Ghidra/Processors/JVM/build/test-results/test", "total": 21, "failures": [["ghidra.javaclass.test.JavaCharListingValueTest", "testJvmHighBitCharacter"], ["ghidra.javaclass.test.JavaCharListingValueTest", "testJvmMaximumCharacter"], ["ghidra.javaclass.test.JavaCharListingValueTest", "testJvmSurrogateCodeUnit"], ["ghidra.javaclass.test.JavaCharListingValueTest", "testDalvikHighBitCharacter"]], "expected_cases": [["ghidra.javaclass.test.JavaCharListingValueTest", "testJvmHighBitCharacter"], ["ghidra.javaclass.test.JavaCharListingValueTest", "testJvmMaximumCharacter"], ["ghidra.javaclass.test.JavaCharListingValueTest", "testJvmSurrogateCodeUnit"], ["ghidra.javaclass.test.JavaCharListingValueTest", "testDalvikHighBitCharacter"], ["ghidra.javaclass.test.JavaCharListingValueTest", "testJvmLowerBoundaryCharacter"], ["ghidra.javaclass.test.JavaCharListingValueTest", "testAsciiCharacter"], ["ghidra.javaclass.test.JavaCharListingValueTest", "testExistingWideCharacterMaximum"], ["ghidra.javaclass.test.JavaCharListingValueTest", "testUnreadableCharacterHasNoValue"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetComputationalCategoryOfDescriptor"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testUnknownDescriptor"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetStackPurgeAndReturnCategory"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetParameterCategories"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetDataTypeOfDescriptor"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetDataTypeList"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetDescriptorForInvokeMethodRef"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetDescriptorForInvokeInterfaceMethodRef"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetDescriptorForInvokeDynamicRef"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetTypeNameForDescriptor"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetTypeNameList"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetReturnTypeOfMethodDescriptor"], ["ghidra.javaclass.test.DescriptorDecoderTest", "testGetParameterString"]]}'
+        run: python /tmp/java-char-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-java-char
+          path: native-evidence/
+          retention-days: 14
