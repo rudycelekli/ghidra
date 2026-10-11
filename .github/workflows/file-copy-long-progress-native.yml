@@ -1,0 +1,36 @@
+name: Long file copy progress native validation
+on:
+  push:
+    branches: [validation/file-copy-long-progress-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preserve validation helper and config
+        run: |
+          cp .github/file-copy-long-progress-native-gate.py /tmp/file-copy-long-progress-native-gate.py
+          cp .github/file-copy-long-progress-native-config.json /tmp/file-copy-long-progress-native-config.json
+      - name: Checkout exact candidate
+        run: git fetch origin ce2f496c38c30c244cd8135a5bc2ecfda97f01f4 && git checkout --detach ce2f496c38c30c244cd8135a5bc2ecfda97f01f4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: file-copy-long-progress
+          HEAD_SHA: ce2f496c38c30c244cd8135a5bc2ecfda97f01f4
+        run: CONFIG="$(cat /tmp/file-copy-long-progress-native-config.json)" python /tmp/file-copy-long-progress-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-file-copy-long-progress
+          path: native-evidence/
+          retention-days: 14

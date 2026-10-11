@@ -1,0 +1,57 @@
+{
+  "language": "java",
+  "production": "Ghidra/Framework/Utility/src/main/java/utilities/util/FileUtilities.java",
+  "test_task": ":Generic:test",
+  "test_classes": [
+    "utilities.util.FileCopyProgressTest"
+  ],
+  "class_counts": {
+    "utilities.util.FileCopyProgressTest": 6
+  },
+  "total": 6,
+  "failures": [
+    [
+      "utilities.util.FileCopyProgressTest",
+      "testFileCopyPreservesLargeMaximum"
+    ],
+    [
+      "utilities.util.FileCopyProgressTest",
+      "testResourceToFilePreservesLargeMaximum"
+    ],
+    [
+      "utilities.util.FileCopyProgressTest",
+      "testResourceToResourcePreservesLargeMaximum"
+    ],
+    [
+      "utilities.util.FileCopyProgressTest",
+      "testFileToStreamPreservesLargeMaximum"
+    ]
+  ],
+  "expected_cases": [
+    [
+      "utilities.util.FileCopyProgressTest",
+      "testFileCopyPreservesLargeMaximum"
+    ],
+    [
+      "utilities.util.FileCopyProgressTest",
+      "testResourceToFilePreservesLargeMaximum"
+    ],
+    [
+      "utilities.util.FileCopyProgressTest",
+      "testResourceToResourcePreservesLargeMaximum"
+    ],
+    [
+      "utilities.util.FileCopyProgressTest",
+      "testFileToStreamPreservesLargeMaximum"
+    ],
+    [
+      "utilities.util.FileCopyProgressTest",
+      "testSmallCopiesPreserveMaximumAndBytes"
+    ],
+    [
+      "utilities.util.FileCopyProgressTest",
+      "testEmptyCopiesPreserveZeroMaximum"
+    ]
+  ],
+  "result_dir": "Ghidra/Framework/Generic/build/test-results/test"
+}
