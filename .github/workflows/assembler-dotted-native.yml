@@ -1,0 +1,31 @@
+name: Assembler dotted labels native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/assembler-dotted-native-gate.py /tmp/assembler-dotted-native-gate.py
+      - run: git fetch origin 073f8fa8b7a2bf7a55c03fb6efef1ef09d6f5c40 && git checkout --detach 073f8fa8b7a2bf7a55c03fb6efef1ef09d6f5c40
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: assembler-dotted
+          HEAD_SHA: 073f8fa8b7a2bf7a55c03fb6efef1ef09d6f5c40
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblyNumericTerminal.java", "test_task": ":SoftwareModeling:test", "test_classes": ["ghidra.app.plugin.assembler.sleigh.PublicAPITest"], "class_counts": {"ghidra.app.plugin.assembler.sleigh.PublicAPITest": 5}, "result_dir": "Ghidra/Framework/SoftwareModeling/build/test-results/test", "total": 5, "failures": [["ghidra.app.plugin.assembler.sleigh.PublicAPITest", "testAssembleWithDottedLabel"], ["ghidra.app.plugin.assembler.sleigh.PublicAPITest", "testAssembleWithLeadingDotLabel"]]}'
+        run: python /tmp/assembler-dotted-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-assembler-dotted
+          path: native-evidence/
+          retention-days: 14
