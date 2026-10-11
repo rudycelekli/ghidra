@@ -1,0 +1,33 @@
+name: RGB565 green channel native validation
+on:
+  push:
+    branches: [validation/rgb-color-listing-encodings-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/rgb565-native-gate.py /tmp/rgb565-native-gate.py
+      - run: git fetch origin b4f2df786e107398cb58fce27ec5c3c8edf9307a && git checkout --detach b4f2df786e107398cb58fce27ec5c3c8edf9307a
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: rgb565
+          HEAD_SHA: b4f2df786e107398cb58fce27ec5c3c8edf9307a
+          CONFIG: '{"language": "java", "productions": ["Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/RGB16ColorDataType.java", "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/RGB16EncodingSettingsDefinition.java", "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/RGB32EncodingSettingsDefinition.java"], "test_task": ":SoftwareModeling:test", "test_classes": ["ghidra.program.model.data.RGB16ListingValueTest", "ghidra.program.model.data.RGB32ListingValueTest"], "class_counts": {"ghidra.program.model.data.RGB16ListingValueTest": 8, "ghidra.program.model.data.RGB32ListingValueTest": 4}, "result_dir": "Ghidra/Framework/SoftwareModeling/build/test-results/test", "total": 12, "failures": [["ghidra.program.model.data.RGB16ListingValueTest", "testPureGreenLittleEndian"], ["ghidra.program.model.data.RGB16ListingValueTest", "testPureRedBigEndianHasNoGreen"], ["ghidra.program.model.data.RGB16ListingValueTest", "testLeastGreenBitLittleEndian"], ["ghidra.program.model.data.RGB16ListingValueTest", "testPureGreenBigEndianRepresentation"], ["ghidra.program.model.data.RGB16ListingValueTest", "testRgb555GreenControl"], ["ghidra.program.model.data.RGB16ListingValueTest", "testArgb1555GreenControl"], ["ghidra.program.model.data.RGB32ListingValueTest", "testRgbaTypedefLittleEndian"], ["ghidra.program.model.data.RGB32ListingValueTest", "testBgraTypedefBigEndian"], ["ghidra.program.model.data.RGB32ListingValueTest", "testAbgrTypedefLittleEndian"]], "expected_cases": [["ghidra.program.model.data.RGB16ListingValueTest", "testPureGreenLittleEndian"], ["ghidra.program.model.data.RGB16ListingValueTest", "testPureRedBigEndianHasNoGreen"], ["ghidra.program.model.data.RGB16ListingValueTest", "testLeastGreenBitLittleEndian"], ["ghidra.program.model.data.RGB16ListingValueTest", "testPureGreenBigEndianRepresentation"], ["ghidra.program.model.data.RGB16ListingValueTest", "testRgb555GreenControl"], ["ghidra.program.model.data.RGB16ListingValueTest", "testArgb1555GreenControl"], ["ghidra.program.model.data.RGB16ListingValueTest", "testPureBlueControl"], ["ghidra.program.model.data.RGB16ListingValueTest", "testUninitializedColorHasNoValue"], ["ghidra.program.model.data.RGB32ListingValueTest", "testRgbaTypedefLittleEndian"], ["ghidra.program.model.data.RGB32ListingValueTest", "testBgraTypedefBigEndian"], ["ghidra.program.model.data.RGB32ListingValueTest", "testAbgrTypedefLittleEndian"], ["ghidra.program.model.data.RGB32ListingValueTest", "testDefaultArgbControl"]]}'
+        run: python /tmp/rgb565-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-rgb565
+          path: native-evidence/
+          retention-days: 14
