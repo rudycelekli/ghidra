@@ -1,0 +1,31 @@
+name: Variable storage expansion native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/variable-expansion-native-gate.py /tmp/variable-expansion-native-gate.py
+      - run: git fetch origin 9c0827a7a0aa8193448d42aa4d7542740fdc75c1 && git checkout --detach 9c0827a7a0aa8193448d42aa4d7542740fdc75c1
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: variable-expansion
+          HEAD_SHA: 9c0827a7a0aa8193448d42aa4d7542740fdc75c1
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableImpl.java", "test_task": ":SoftwareModeling:test", "test_classes": ["ghidra.program.model.listing.VariableStorageResizeTest"], "class_counts": {"ghidra.program.model.listing.VariableStorageResizeTest": 8}, "result_dir": "Ghidra/Framework/SoftwareModeling/build/test-results/test", "total": 8, "failures": [["ghidra.program.model.listing.VariableStorageResizeTest", "testGrowStackVariable"], ["ghidra.program.model.listing.VariableStorageResizeTest", "testGrowBigEndianMemoryVariable"], ["ghidra.program.model.listing.VariableStorageResizeTest", "testGrowLastComponentOfCompoundStorage"], ["ghidra.program.model.listing.VariableStorageResizeTest", "testGrowBigEndianRegisterUsesParentAddress"]]}'
+        run: python /tmp/variable-expansion-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-variable-expansion
+          path: native-evidence/
+          retention-days: 14
