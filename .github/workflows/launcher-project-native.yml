@@ -1,0 +1,42 @@
+name: Launcher configuration and project ownership validation
+on:
+  push:
+    branches: [validation/launcher-project-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kind: launch-properties
+            head: 0d9891bc18f3ae9ab401f6173df25b9c242a9812
+          - kind: project-setup
+            head: d40e1e93437b721de554b810b0f4ea257568fefa
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preserve validation runner
+        run: cp .github/launcher-project-native-gate.py /tmp/launcher-project-native-gate.py
+      - name: Checkout exact candidate
+        run: git fetch origin ${{ matrix.head }} && git checkout --detach ${{ matrix.head }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed, original core comparison and full build
+        env:
+          CANDIDATE_KIND: ${{ matrix.kind }}
+          CANDIDATE_HEAD: ${{ matrix.head }}
+        run: python /tmp/launcher-project-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-${{ matrix.kind }}
+          path: native-evidence/
+          retention-days: 14
