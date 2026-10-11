@@ -1,0 +1,36 @@
+name: Recursive archive cancellation native validation
+on:
+  push:
+    branches: [validation/archive-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preserve validation helper and config
+        run: |
+          cp .github/archive-native-gate.py /tmp/archive-native-gate.py
+          cp .github/archive-native-config.json /tmp/archive-native-config.json
+      - name: Checkout exact candidate
+        run: git fetch origin 6564641b373f3cff46488a06123aa572f196ef5c && git checkout --detach 6564641b373f3cff46488a06123aa572f196ef5c
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: archive-cancel
+          HEAD_SHA: 6564641b373f3cff46488a06123aa572f196ef5c
+        run: CONFIG="$(cat /tmp/archive-native-config.json)" python /tmp/archive-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-archive-cancel
+          path: native-evidence/
+          retention-days: 14

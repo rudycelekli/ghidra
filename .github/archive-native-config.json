@@ -1,0 +1,57 @@
+{
+  "language": "java",
+  "production": "Ghidra/Framework/Generic/src/main/java/generic/io/JarWriter.java",
+  "test_task": ":Generic:test",
+  "test_classes": [
+    "generic.io.JarWriterTest"
+  ],
+  "class_counts": {
+    "generic.io.JarWriterTest": 6
+  },
+  "result_dir": "Ghidra/Framework/Generic/build/test-results/test",
+  "total": 6,
+  "failures": [
+    [
+      "generic.io.JarWriterTest",
+      "testCanceledDirectoryReportsFailure"
+    ],
+    [
+      "generic.io.JarWriterTest",
+      "testCanceledEmptyDirectoryReportsFailure"
+    ],
+    [
+      "generic.io.JarWriterTest",
+      "testCancellationBetweenFilesReportsFailure"
+    ],
+    [
+      "generic.io.JarWriterTest",
+      "testNestedCancellationPropagatesFailure"
+    ]
+  ],
+  "expected_cases": [
+    [
+      "generic.io.JarWriterTest",
+      "testCanceledDirectoryReportsFailure"
+    ],
+    [
+      "generic.io.JarWriterTest",
+      "testCanceledEmptyDirectoryReportsFailure"
+    ],
+    [
+      "generic.io.JarWriterTest",
+      "testCancellationBetweenFilesReportsFailure"
+    ],
+    [
+      "generic.io.JarWriterTest",
+      "testNestedCancellationPropagatesFailure"
+    ],
+    [
+      "generic.io.JarWriterTest",
+      "testCompleteDirectoryWritesAllFiles"
+    ],
+    [
+      "generic.io.JarWriterTest",
+      "testExcludedFilesStillReportSuccess"
+    ]
+  ]
+}
