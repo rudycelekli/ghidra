@@ -1,0 +1,60 @@
+{
+  "language": "java",
+  "productions": [
+    "Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Ext4Extent.java",
+    "Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Ext4ExtentsHelper.java"
+  ],
+  "test_task": ":FileFormats:test",
+  "test_classes": [
+    "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest"
+  ],
+  "class_counts": {
+    "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest": 6
+  },
+  "total": 6,
+  "failures": [
+    [
+      "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest",
+      "testUnwrittenExtentLength"
+    ],
+    [
+      "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest",
+      "testUnwrittenBlocksReadAsZero"
+    ],
+    [
+      "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest",
+      "testWrittenExtentAfterUnwritten"
+    ],
+    [
+      "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest",
+      "testPartialUnwrittenExtent"
+    ]
+  ],
+  "expected_cases": [
+    [
+      "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest",
+      "testUnwrittenExtentLength"
+    ],
+    [
+      "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest",
+      "testUnwrittenBlocksReadAsZero"
+    ],
+    [
+      "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest",
+      "testWrittenExtentAfterUnwritten"
+    ],
+    [
+      "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest",
+      "testPartialUnwrittenExtent"
+    ],
+    [
+      "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest",
+      "testInitializedMaximumLength"
+    ],
+    [
+      "ghidra.file.formats.ext4.Ext4UnwrittenExtentTest",
+      "testOrdinaryWrittenAndSparseHole"
+    ]
+  ],
+  "result_dir": "Ghidra/Features/FileFormats/build/test-results/test"
+}

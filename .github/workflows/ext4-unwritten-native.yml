@@ -1,0 +1,36 @@
+name: EXT4 unwritten extents native validation
+on:
+  push:
+    branches: [validation/ext4-unwritten-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preserve validation helper and config
+        run: |
+          cp .github/ext4-unwritten-native-gate.py /tmp/ext4-unwritten-native-gate.py
+          cp .github/ext4-unwritten-native-config.json /tmp/ext4-unwritten-native-config.json
+      - name: Checkout exact candidate
+        run: git fetch origin c465ee07fa5d2c84557922cd9b24f087e0083aa8 && git checkout --detach c465ee07fa5d2c84557922cd9b24f087e0083aa8
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: ext4-unwritten
+          HEAD_SHA: c465ee07fa5d2c84557922cd9b24f087e0083aa8
+        run: CONFIG="$(cat /tmp/ext4-unwritten-native-config.json)" python /tmp/ext4-unwritten-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-ext4-unwritten
+          path: native-evidence/
+          retention-days: 14
