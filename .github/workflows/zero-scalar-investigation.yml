@@ -1,0 +1,31 @@
+name: Zero-offset reference native investigation
+on:
+  push:
+    branches: [validation/zero-scalar-reference-investigation-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/zero-scalar-investigation-gate.py /tmp/zero-scalar-investigation-gate.py
+      - run: git fetch origin 7b8830e5408ae396818d5751431d472d1166aea9 && git checkout --detach 7b8830e5408ae396818d5751431d472d1166aea9
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Actual current x86 listing investigation and full build
+        env:
+          HEAD_SHA: 7b8830e5408ae396818d5751431d472d1166aea9
+        run: python /tmp/zero-scalar-investigation-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: zero-scalar-reference-investigation
+          path: native-evidence/
+          retention-days: 14
