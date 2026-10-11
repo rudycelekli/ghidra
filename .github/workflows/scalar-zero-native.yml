@@ -1,0 +1,31 @@
+name: Scalar zero bit conversion native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/scalar-zero-native-gate.py /tmp/scalar-zero-native-gate.py
+      - run: git fetch origin 64cdf0357aab889406bb9e6e21a826ae5499e92d && git checkout --detach 64cdf0357aab889406bb9e6e21a826ae5499e92d
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: scalar-zero
+          HEAD_SHA: 64cdf0357aab889406bb9e6e21a826ae5499e92d
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/scalar/Scalar.java", "test_task": ":SoftwareModeling:test", "test_classes": ["ghidra.program.model.scalar.ScalarTest"], "class_counts": {"ghidra.program.model.scalar.ScalarTest": 12}, "result_dir": "Ghidra/Framework/SoftwareModeling/build/test-results/test", "total": 12, "failures": [["ghidra.program.model.scalar.ScalarTest", "testZeroBitBigInteger"], ["ghidra.program.model.scalar.ScalarTest", "testZeroBitFieldValueCanBeEncoded"]]}'
+        run: python /tmp/scalar-zero-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-scalar-zero
+          path: native-evidence/
+          retention-days: 14
