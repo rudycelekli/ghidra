@@ -1,0 +1,31 @@
+name: Object cache native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/object-cache-native-gate.py /tmp/object-cache-native-gate.py
+      - run: git fetch origin d037495965700c4649d957d5c9d1052b58538061 && git checkout --detach d037495965700c4649d957d5c9d1052b58538061
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native regressions and full build
+        env:
+          KIND: object-cache
+          HEAD_SHA: d037495965700c4649d957d5c9d1052b58538061
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectCache.java", "test_task": ":Generic:test", "test_classes": ["ghidra.util.datastruct.ObjectCacheTest"], "class_counts": {"ghidra.util.datastruct.ObjectCacheTest": 4}, "result_dir": "Ghidra/Framework/Generic/build/test-results/test", "total": 4, "failures": [["ghidra.util.datastruct.ObjectCacheTest", "testLateCollectedReferencePreservesReplacement"], ["ghidra.util.datastruct.ObjectCacheTest", "testLateCollectedReferenceDoesNotReloadReplacement"]]}'
+        run: python /tmp/object-cache-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-object-cache
+          path: native-evidence/
+          retention-days: 14
