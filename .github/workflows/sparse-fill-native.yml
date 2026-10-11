@@ -1,0 +1,36 @@
+name: Sparse image fill byte order native validation
+on:
+  push:
+    branches: [validation/sparse-fill-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preserve validation helper and config
+        run: |
+          cp .github/sparse-fill-native-gate.py /tmp/sparse-fill-native-gate.py
+          cp .github/sparse-fill-native-config.json /tmp/sparse-fill-native-config.json
+      - name: Checkout exact candidate
+        run: git fetch origin 5d2c6a2ba538783d1de0854907070f9f030472ee && git checkout --detach 5d2c6a2ba538783d1de0854907070f9f030472ee
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: sparse-fill
+          HEAD_SHA: 5d2c6a2ba538783d1de0854907070f9f030472ee
+        run: CONFIG="$(cat /tmp/sparse-fill-native-config.json)" python /tmp/sparse-fill-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-sparse-fill
+          path: native-evidence/
+          retention-days: 14
