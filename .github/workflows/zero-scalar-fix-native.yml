@@ -1,0 +1,34 @@
+name: Zero-offset scalar reference native validation
+on:
+  push:
+    branches: [validation/zero-scalar-reference-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/zero-scalar-fix-native-gate.py /tmp/zero-scalar-fix-native-gate.py
+      - run: git fetch origin fbad7479b2f50f848089336783935fdbf470c35a && git checkout --detach fbad7479b2f50f848089336783935fdbf470c35a
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: zero-scalar-fix
+          HEAD_SHA: fbad7479b2f50f848089336783935fdbf470c35a
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/java/ghidra/program/model/listing/CodeUnitFormat.java", "test_task": ":Base:integrationTest", "test_classes": ["ghidra.program.model.listing.ZeroScalarReferenceTest", "ghidra.app.util.viewer.field.OperandFieldFactoryTest"], "class_counts": {"ghidra.program.model.listing.ZeroScalarReferenceTest": 5, "ghidra.app.util.viewer.field.OperandFieldFactoryTest": 13}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 18, "failures": [["ghidra.program.model.listing.ZeroScalarReferenceTest", "testZeroOffsetMemoryReference"]], "expected_cases": [["ghidra.program.model.listing.ZeroScalarReferenceTest", "testZeroOffsetMemoryReference"], ["ghidra.program.model.listing.ZeroScalarReferenceTest", "testNonzeroOffsetMemoryReferenceControl"], ["ghidra.program.model.listing.ZeroScalarReferenceTest", "testZeroWithoutReferenceControl"], ["ghidra.program.model.listing.ZeroScalarReferenceTest", "testNonzeroWithoutReferenceControl"], ["ghidra.program.model.listing.ZeroScalarReferenceTest", "testIndexedOperandWithNonzeroScaleKeepsExistingRepresentationControl"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testOffcutReferenceToFunction_Indirect"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testOffcutReferenceToFunction_Direct"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testDefaultLabelMaximumStringLength"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testDefaultLabelRendering_StringOption"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testDefaultLabelRenderingCharArray_StringOption"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testOffcutStringDynamicLabelReference"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testOffcutStringDefinedLabelReference"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testOffcutCharArrayDynamicLabelReference"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testOffcutStringNonDynamicLabelReference"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testOffcutStringDynamicLabelReference_ShowOffcutInfoOptionOff"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testOffcutStringDynamicLabelReference_ShowOffcutInfoOptionOn"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testOffcutReferenceIntoArray"], ["ghidra.app.util.viewer.field.OperandFieldFactoryTest", "testOffcutReferenceIntoStructure"]]}'
+        run: python /tmp/zero-scalar-fix-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-zero-scalar-fix
+          path: native-evidence/
+          retention-days: 14
