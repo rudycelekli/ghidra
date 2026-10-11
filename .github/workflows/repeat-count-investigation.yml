@@ -1,0 +1,29 @@
+name: Investigate repeated string count
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/repeat-count-investigation-gate.py /tmp/repeat-count-investigation-gate.py
+      - run: git fetch origin fe3bf8d84fe3e448fc6c87b9c39dc570a5c67f7a && git checkout --detach fe3bf8d84fe3e448fc6c87b9c39dc570a5c67f7a
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Actual listing investigation and full build
+        env:
+          HEAD_SHA: fe3bf8d84fe3e448fc6c87b9c39dc570a5c67f7a
+        run: python /tmp/repeat-count-investigation-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: repeat-count-investigation
+          path: native-evidence/
+          retention-days: 14
