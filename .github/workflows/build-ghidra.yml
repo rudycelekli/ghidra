@@ -10,8 +10,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - kind: float
-            head: c8484ce2ec78fef0ffeecf4b6b78bd69044191dc
           - kind: script
             head: 0c0f2b4ef6179012e8e26fee0153af232b2e9225
           - kind: analysis
