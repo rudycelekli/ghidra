@@ -1,0 +1,30 @@
+name: Fork-only C declared wide enum characterization
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/c-enum-declared-width-characterization.py /tmp/c-enum-declared-width-characterization.py
+      - run: git fetch origin 702fbf6368c6cad95e83f9a2d6374799cae44e01 && git checkout --detach 702fbf6368c6cad95e83f9a2d6374799cae44e01
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Characterize actual declared eight-byte enum values
+        env:
+          HEAD_SHA: 702fbf6368c6cad95e83f9a2d6374799cae44e01
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/c-enum-declared-width-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: c-enum-declared-width-characterization
+          path: native-evidence/
+          retention-days: 14
