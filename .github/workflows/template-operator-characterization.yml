@@ -1,0 +1,35 @@
+name: Fork-only template operator lookup characterization
+on:
+  push:
+    branches: [validation/template-operator-lookup-characterization-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/template-operator-characterization.py /tmp/template-operator-characterization.py
+      - run: git fetch origin 9769c94cf843d7890b51fdefcddfdd0f04d27ad9 && git checkout --detach 9769c94cf843d7890b51fdefcddfdd0f04d27ad9
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Characterize real qualified operator lookup and unchanged parser/namespace tests
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/template-operator-evidence
+          HEAD_SHA: 9769c94cf843d7890b51fdefcddfdd0f04d27ad9
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/template-operator-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: template-operator-characterization
+          path: ${{ runner.temp }}/template-operator-evidence/
+          retention-days: 14
