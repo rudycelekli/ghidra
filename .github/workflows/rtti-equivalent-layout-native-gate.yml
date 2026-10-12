@@ -1,0 +1,38 @@
+name: Fork-only RTTI equivalent-layout native regression gate
+on:
+  push:
+    branches: [validation/rtti-equivalent-layout-windows-native-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preserve immutable fork-only gate before candidate checkout
+        run: |
+          cp .github/rtti-equivalent-layout-native-gate.py /tmp/rtti-equivalent-layout-native-gate.py
+          cp .github/RttiEquivalentLayoutNativeTest.java /tmp/RttiEquivalentLayoutNativeTest.java
+          cp .github/RttiEquivalentLayoutPublicPeTest.java /tmp/RttiEquivalentLayoutPublicPeTest.java
+          git fetch origin 2c613727c69822408f30a0d13d1c0f01366853c4
+          git checkout --detach 2c613727c69822408f30a0d13d1c0f01366853c4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Actual baseline and fixed native callers and complete public recovery
+        env:
+          GHIDRA_HEADLESS_MAXMEM: 4G
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+          CANDIDATE_SHA: 2c613727c69822408f30a0d13d1c0f01366853c4
+        run: python /tmp/rtti-equivalent-layout-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: rtti-equivalent-layout-native-gate
+          path: native-evidence/
+          retention-days: 14
