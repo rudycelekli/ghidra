@@ -1,0 +1,35 @@
+name: Fork-only IntelHex accepted record-size characterization
+on:
+  push:
+    branches: [validation/intelhex-record-size-lookup-characterization-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/intelhex-record-size-characterization.py /tmp/intelhex-record-size-characterization.py
+      - run: git fetch origin f82683bfd9f825d4e62a8cc12a5e537450753237 && git checkout --detach f82683bfd9f825d4e62a8cc12a5e537450753237
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Characterize actual option editor/export and unchanged record tests
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/intelhex-record-size-evidence
+          HEAD_SHA: f82683bfd9f825d4e62a8cc12a5e537450753237
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/intelhex-record-size-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: intelhex-record-size-characterization
+          path: ${{ runner.temp }}/intelhex-record-size-evidence/
+          retention-days: 14
