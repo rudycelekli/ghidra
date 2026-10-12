@@ -114,7 +114,21 @@ public class RttiEquivalentLayoutPublicPeTest extends HeadlessScript {
                     " scope=MAP_ONLY status=NOT_INITIALIZED");
                 return;
             }
-            Field mapField=RecoveredClassHelper.class.getDeclaredField("namespaceToClassMap");
+            Class<?> runtimeClass=recoverer.getClass();
+            Field mapField=null;
+            for (Class<?> declaring=runtimeClass;declaring!=null;declaring=declaring.getSuperclass()) {
+                try { mapField=declaring.getDeclaredField("namespaceToClassMap");break; }
+                catch (NoSuchFieldException absent) { /* Continue through the actual runtime hierarchy. */ }
+            }
+            if (mapField==null) { throw new NoSuchFieldException("namespaceToClassMap"); }
+            Class<?> declaringClass=mapField.getDeclaringClass();
+            boolean receiverValid=declaringClass.isInstance(recoverer);
+            println("RTTI_PUBLIC_PE_MAP_RECEIVER phase="+phase+" sample="+sample+
+                " runtimeClass="+runtimeClass.getName()+" declaringClass="+declaringClass.getName()+
+                " runtimeLoader="+System.identityHashCode(runtimeClass.getClassLoader())+
+                " declaringLoader="+System.identityHashCode(declaringClass.getClassLoader())+
+                " receiverValid="+receiverValid);
+            if (!receiverValid) { throw new IllegalArgumentException("Invalid observed map receiver"); }
             mapField.setAccessible(true);
             Map<?,?> map=(Map<?,?>)mapField.get(recoverer);
             int declaredSize=map.size(),visited=0,maxVftables=0,maxHierarchy=0;

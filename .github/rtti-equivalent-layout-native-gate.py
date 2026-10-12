@@ -231,7 +231,7 @@ try:
     r['native_sha256'] = hashlib.sha256(native.read_bytes()).hexdigest()
     assert os.environ['GHIDRA_HEADLESS_MAXMEM'] == '4G'
     r['fixture_hashes'] = {}
-    for name, expected in [('RttiEquivalentLayoutNativeTest.java', '58b139c8b26c5478c97c94ec57133b0b23d5bc6b010e9cafdf756bece41bd93c'), ('RttiEquivalentLayoutPublicPeTest.java', '25123eef6e96e88364ebc2196253dc872ecc6ba2b5d380f8b58980cbb528fee9')]:
+    for name, expected in [('RttiEquivalentLayoutNativeTest.java', '58b139c8b26c5478c97c94ec57133b0b23d5bc6b010e9cafdf756bece41bd93c'), ('RttiEquivalentLayoutPublicPeTest.java', '0cf3370fdfc53b3284986f593b7d620014e1cd7b8485e7fd9ccfdf8328e69494')]:
         digest = hashlib.sha256(pathlib.Path('/tmp', name).read_bytes()).hexdigest()
         assert digest == expected
         r['fixture_hashes'][name] = digest
