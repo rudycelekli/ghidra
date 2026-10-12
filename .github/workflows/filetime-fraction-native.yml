@@ -1,0 +1,33 @@
+name: FILETIME fractional precision native validation
+on:
+  push:
+    branches: [validation/filetime-fraction-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/filetime-fraction-native-gate.py /tmp/filetime-fraction-native-gate.py
+      - run: git fetch origin c43395a3e88aa29966e8968adfd15f0c461ab988 && git checkout --detach c43395a3e88aa29966e8968adfd15f0c461ab988
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: filetime-fraction
+          HEAD_SHA: c43395a3e88aa29966e8968adfd15f0c461ab988
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FileTimeDataType.java", "test_task": ":SoftwareModeling:test", "test_classes": ["ghidra.program.model.data.FileTimeListingValueTest"], "class_counts": {"ghidra.program.model.data.FileTimeListingValueTest": 6}, "result_dir": "Ghidra/Framework/SoftwareModeling/build/test-results/test", "total": 6, "failures": [["ghidra.program.model.data.FileTimeListingValueTest", "testOneTickLittleEndian"], ["ghidra.program.model.data.FileTimeListingValueTest", "testOneTickBigEndian"], ["ghidra.program.model.data.FileTimeListingValueTest", "testLastTickBeforeNextSecond"], ["ghidra.program.model.data.FileTimeListingValueTest", "testFirstTickAfterNextSecond"]], "expected_cases": [["ghidra.program.model.data.FileTimeListingValueTest", "testOneTickLittleEndian"], ["ghidra.program.model.data.FileTimeListingValueTest", "testOneTickBigEndian"], ["ghidra.program.model.data.FileTimeListingValueTest", "testLastTickBeforeNextSecond"], ["ghidra.program.model.data.FileTimeListingValueTest", "testFirstTickAfterNextSecond"], ["ghidra.program.model.data.FileTimeListingValueTest", "testRawTicksValueControl"], ["ghidra.program.model.data.FileTimeListingValueTest", "testUnreadableTimestampControl"]]}'
+        run: python /tmp/filetime-fraction-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-filetime-fraction
+          path: native-evidence/
+          retention-days: 14
