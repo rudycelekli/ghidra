@@ -80,6 +80,7 @@ try:
             ':Ghidra/Features/Decompiler/ghidra_scripts/' + relative])
         assert (scripts / relative).read_bytes() == original
         r['production_script_sha256'][relative] = hashlib.sha256(original).hexdigest()
+    pathlib.Path('/tmp/rtti-project').mkdir()
     assert run('actual-public-rtti-script', [str(launches[0]), '/tmp/rtti-project', 'PublicRtti',
                '-import', str(fixture), '-analysisTimeoutPerFile', '1200', '-max-cpu', '2',
                '-scriptPath', '/tmp', '-postScript', 'RttiDuplicateArrayCharacterization.java',
