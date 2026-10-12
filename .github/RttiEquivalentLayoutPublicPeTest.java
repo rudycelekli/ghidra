@@ -24,7 +24,22 @@ public class RttiEquivalentLayoutPublicPeTest extends HeadlessScript {
         var source = GhidraScriptUtil.findScriptByName("RecoverClassesFromRTTIScript.java");
         if (source == null) { throw new IllegalStateException("Original public script missing"); }
         GhidraScript script = GhidraScriptUtil.getProvider(source).getScriptInstance(source, errorWriter);
-        try { script.execute(new GhidraState(state), getControls()); }
+        // Observe the real original public script without replacing its recoverer or mutating maps.
+        // This is map-only telemetry; the local recoveredClasses list is not reflected or claimed.
+        Thread observer = new Thread(() -> {
+            for (int sample=0; sample<20; sample++) {
+                try { Thread.sleep(120000); }
+                catch (InterruptedException ex) { Thread.currentThread().interrupt(); return; }
+                observeRecoveryMap(script,args[0],sample);
+            }
+        }, "RTTI-public-map-observer");
+        observer.setDaemon(true);
+        observer.start();
+        println("RTTI_PUBLIC_PE_PHASE phase="+args[0]+" event=ORIGINAL_SCRIPT_START");
+        try {
+            script.execute(new GhidraState(state), getControls());
+            println("RTTI_PUBLIC_PE_PHASE phase="+args[0]+" event=ORIGINAL_SCRIPT_RETURN");
+        }
         catch (Exception ex) {
             for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
                 if (args[0].equals("baseline") && cause instanceof IllegalArgumentException &&
@@ -37,6 +52,10 @@ public class RttiEquivalentLayoutPublicPeTest extends HeadlessScript {
                 }
             }
             throw ex;
+        }
+        finally {
+            observer.interrupt();
+            observer.join(1000);
         }
         if (!args[0].equals("fixed")) { throw new AssertionError("Unchanged baseline no longer reproduces"); }
         Field field = script.getClass().getDeclaredField("recoverClassesFromRTTI");
@@ -85,4 +104,44 @@ public class RttiEquivalentLayoutPublicPeTest extends HeadlessScript {
         println("RTTI_PUBLIC_PE_OUTCOME phase=fixed outcome=COMPLETE_RECOVERY hierarchy=" + expectedName +
             ",std::_Func_base<bool,int> arrays=107 descriptors=107 parentOffset=0 virtual=false structureLength=" + structure.getLength());
     }
+    private void observeRecoveryMap(GhidraScript script,String phase,int sample) {
+        try {
+            Field recovererField=script.getClass().getDeclaredField("recoverClassesFromRTTI");
+            recovererField.setAccessible(true);
+            Object recoverer=recovererField.get(script);
+            if (recoverer==null) {
+                println("RTTI_PUBLIC_PE_MAP phase="+phase+" sample="+sample+
+                    " scope=MAP_ONLY status=NOT_INITIALIZED");
+                return;
+            }
+            Field mapField=RecoveredClassHelper.class.getDeclaredField("namespaceToClassMap");
+            mapField.setAccessible(true);
+            Map<?,?> map=(Map<?,?>)mapField.get(recoverer);
+            int declaredSize=map.size(),visited=0,maxVftables=0,maxHierarchy=0;
+            long totalVftables=0;
+            Set<Long> namespaceIds=new HashSet<>();
+            Set<RecoveredClass> identities=Collections.newSetFromMap(new IdentityHashMap<>());
+            for (Map.Entry<?,?> entry:map.entrySet()) {
+                if (visited>=20000) { break; }
+                visited++;
+                Namespace namespace=(Namespace)entry.getKey();
+                RecoveredClass recovered=(RecoveredClass)entry.getValue();
+                namespaceIds.add(namespace.getID());identities.add(recovered);
+                int tables=recovered.getVftableAddresses().size();
+                maxVftables=Math.max(maxVftables,tables);totalVftables+=tables;
+                maxHierarchy=Math.max(maxHierarchy,recovered.getClassHierarchy().size());
+            }
+            println("RTTI_PUBLIC_PE_MAP phase="+phase+" sample="+sample+
+                " scope=MAP_ONLY status=OBSERVED declaredSize="+declaredSize+" visited="+visited+
+                " uniqueNamespaceIds="+namespaceIds.size()+" uniqueRecoveredIdentities="+identities.size()+
+                " maxVftableList="+maxVftables+" totalVftableEntries="+totalVftables+
+                " maxHierarchy="+maxHierarchy+" complete="+(visited==declaredSize && map.size()==declaredSize));
+        }
+        catch (Exception ex) {
+            // Concurrent reads may be unavailable; this is never a test or qualification outcome.
+            println("RTTI_PUBLIC_PE_MAP phase="+phase+" sample="+sample+
+                " scope=MAP_ONLY status=UNAVAILABLE type="+ex.getClass().getName());
+        }
+    }
+
 }

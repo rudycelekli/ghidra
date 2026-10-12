@@ -1,6 +1,7 @@
 import gzip
 import datetime
 import threading
+import time
 import signal
 import hashlib
 import io
@@ -14,8 +15,9 @@ import traceback
 import urllib.request
 import zipfile
 
-p = pathlib.Path.cwd()
-e = p / 'native-evidence'
+p = pathlib.Path.cwd().resolve()
+e = pathlib.Path(os.environ['EVIDENCE_DIR']).resolve()
+assert e != p and p not in e.parents
 e.mkdir(exist_ok=True)
 base = os.environ['BASE_SHA']
 head = os.environ['CANDIDATE_SHA']
@@ -28,6 +30,80 @@ def save():
 def shutil_copy_stream(source, destination):
     while chunk := source.read(1024 * 1024):
         destination.write(chunk)
+
+
+def snapshot_owned_java(label, process, elapsed, progress_bytes):
+    # Inspect only descendants of the process this gate launched; never attach to unrelated Java.
+    snapshot = {'observed_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'elapsed_seconds': elapsed, 'native_raw_bytes_so_far': progress_bytes,
+                'scope': 'OWNED_PROCESS_DESCENDANTS_ONLY', 'java': []}
+    jcmd = pathlib.Path(os.environ['JAVA_HOME']) / 'bin/jcmd'
+    pending = [process.pid]
+    seen = set()
+    while pending:
+        pid = pending.pop()
+        if pid in seen:
+            continue
+        seen.add(pid)
+        if len(seen) > 16:
+            snapshot['inventory_overflow'] = True
+            break
+        root = pathlib.Path('/proc') / str(pid)
+        try:
+            child_bytes = (root / 'task' / str(pid) / 'children').read_bytes()
+            assert len(child_bytes) <= 16384
+            children = [int(x) for x in child_bytes.split()]
+            if len(children) + len(pending) > 16:
+                snapshot['inventory_overflow'] = True
+                break
+            pending.extend(children)
+            if (root / 'exe').resolve().name != 'java':
+                continue
+        except (OSError, ValueError, AssertionError) as ex:
+            snapshot.setdefault('unavailable', []).append({'pid': pid, 'type': type(ex).__name__})
+            continue
+        path = e / (label + '-thread-' + str(int(elapsed)) + '-' + str(pid) + '.txt')
+        digest = hashlib.sha256()
+        total = 0
+        retained = 0
+        errors = []
+        diagnostic = subprocess.Popen([str(jcmd), str(pid), 'Thread.print', '-l'],
+                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                      start_new_session=True)
+        def read_snapshot():
+            nonlocal total, retained
+            try:
+                with path.open('wb') as output:
+                    while chunk := diagnostic.stdout.read(65536):
+                        digest.update(chunk)
+                        total += len(chunk)
+                        if retained < 1048576:
+                            owned = chunk[:1048576-retained]
+                            output.write(owned)
+                            retained += len(owned)
+            except BaseException as ex:
+                errors.append(type(ex).__name__)
+        reader = threading.Thread(target=read_snapshot, daemon=True)
+        reader.start()
+        code = 'TIMEOUT'
+        try:
+            code = diagnostic.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            pass
+        finally:
+            try:
+                os.killpg(diagnostic.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            diagnostic.wait(timeout=10)
+            reader.join(timeout=10)
+        snapshot['java'].append({'pid': pid, 'exit_code': code, 'path': path.name,
+            'raw_sha256': digest.hexdigest(), 'raw_bytes': total,
+            'retained_bytes': retained, 'truncated': total > retained,
+            'reader_unfinished': reader.is_alive(), 'errors': errors,
+            'status': 'OBSERVED' if code == 0 and not errors and not reader.is_alive() and total <= retained else 'UNAVAILABLE'})
+    r.setdefault('diagnostic_snapshots', {}).setdefault(label, []).append(snapshot)
+    save()
 
 
 def run(label, args, timeout=1800, **kwargs):
@@ -51,7 +127,25 @@ def run(label, args, timeout=1800, **kwargs):
         thread = threading.Thread(target=pump, daemon=True)
         thread.start()
         try:
-            exit_code = process.wait(timeout=timeout)
+            if label.startswith('actual-public-pe-'):
+                began = time.monotonic()
+                deadlines = [600, 1200, 1800]
+                exit_code = 'TIMEOUT'
+                while True:
+                    elapsed = time.monotonic() - began
+                    if elapsed >= timeout:
+                        snapshot_owned_java(label, process, elapsed, raw_bytes)
+                        break
+                    try:
+                        exit_code = process.wait(timeout=min(120, timeout-elapsed))
+                        break
+                    except subprocess.TimeoutExpired:
+                        elapsed = time.monotonic() - began
+                        if deadlines and elapsed >= deadlines[0]:
+                            deadlines.pop(0)
+                            snapshot_owned_java(label, process, elapsed, raw_bytes)
+            else:
+                exit_code = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             exit_code = 'TIMEOUT'
         finally:
@@ -137,7 +231,7 @@ try:
     r['native_sha256'] = hashlib.sha256(native.read_bytes()).hexdigest()
     assert os.environ['GHIDRA_HEADLESS_MAXMEM'] == '4G'
     r['fixture_hashes'] = {}
-    for name, expected in [('RttiEquivalentLayoutNativeTest.java', '58b139c8b26c5478c97c94ec57133b0b23d5bc6b010e9cafdf756bece41bd93c'), ('RttiEquivalentLayoutPublicPeTest.java', '2a0796635facd9ef309700955746d460feaa606cd8e62d42d5405540b80df45f')]:
+    for name, expected in [('RttiEquivalentLayoutNativeTest.java', '58b139c8b26c5478c97c94ec57133b0b23d5bc6b010e9cafdf756bece41bd93c'), ('RttiEquivalentLayoutPublicPeTest.java', '25123eef6e96e88364ebc2196253dc872ecc6ba2b5d380f8b58980cbb528fee9')]:
         digest = hashlib.sha256(pathlib.Path('/tmp', name).read_bytes()).hexdigest()
         assert digest == expected
         r['fixture_hashes'][name] = digest

@@ -1,11 +1,12 @@
 name: Fork-only RTTI equivalent-layout native regression gate
 on:
   push:
-    branches: [validation/rtti-equivalent-layout-reference-refresh-20261012]
+    branches: [validation/rtti-equivalent-layout-map-stack-diagnostic-20261012]
 permissions:
   contents: read
 jobs:
   native:
+    if: github.repository == 'rudycelekli/ghidra'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -26,6 +27,7 @@ jobs:
           python-version: '3.12'
       - name: Actual baseline and fixed native callers and complete public recovery
         env:
+          EVIDENCE_DIR: ${{ runner.temp }}/rtti-equivalent-layout-native-evidence
           GHIDRA_HEADLESS_MAXMEM: 4G
           BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
           CANDIDATE_SHA: 2c613727c69822408f30a0d13d1c0f01366853c4
@@ -34,5 +36,5 @@ jobs:
         if: always()
         with:
           name: rtti-equivalent-layout-native-gate
-          path: native-evidence/
+          path: ${{ runner.temp }}/rtti-equivalent-layout-native-evidence/
           retention-days: 14
