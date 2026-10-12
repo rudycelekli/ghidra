@@ -1,0 +1,36 @@
+name: Fork-only VT association cache native qualification
+on:
+  push:
+    branches: [validation/vt-association-cache-native-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/vt-association-cache-native-qualification-gate.py /tmp/vt-association-cache-native-qualification-gate.py
+      - run: git fetch origin dca0dea02fb090f76459933181b01573d857bb6a && git checkout --detach dca0dea02fb090f76459933181b01573d857bb6a
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install virtual display
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Native baseline, fixed public cache regressions, original outcomes and full build
+        env:
+          HEAD_SHA: dca0dea02fb090f76459933181b01573d857bb6a
+          BASELINE_SHA: 8d35728b33f7518f78f2238067c3bc544b82d54e
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/vt-association-cache-native-qualification-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: vt-association-cache-native
+          path: native-evidence/
+          retention-days: 14
