@@ -247,12 +247,38 @@ public class RttiEquivalentLayoutNativeTest extends HeadlessScript {
             if (refs.length != 1 || refs[0].getToAddress().equals(encoded)) { throw new AssertionError("Actual raw/reference mismatch producer failed"); }
             println("RTTI_REFERENCE_MISMATCH field=" + address(offset) + " raw=" + encoded + " reference=" + refs[0].getToAddress());
         }
+        void refreshAppliedData(long offset) throws Exception {
+            Data old = p.getListing().getDefinedDataAt(address(offset));
+            if (old == null) { throw new AssertionError("Actual applied RTTI mutation producer missing"); }
+            DataType type = old.getDataType();
+            int length = old.getLength();
+            p.getListing().clearCodeUnits(address(offset), address(offset + length - 1), false);
+            apply(offset, type);
+            Data replacement = p.getListing().getDefinedDataAt(address(offset));
+            if (replacement == null || replacement.getLength() != length ||
+                !replacement.getDataType().isEquivalent(type)) {
+                throw new AssertionError("Actual applied RTTI mutation producer changed data shape");
+            }
+        }
+        void assertEncodedReference(long offset, long target, boolean absolute) {
+            Address encoded = absolute ? MSDataTypeUtils.getAbsoluteAddress(p, address(offset)) :
+                MSDataTypeUtils.getReferencedAddress(p, address(offset));
+            Reference[] refs = p.getReferenceManager().getReferencesFrom(address(offset));
+            if (!address(target).equals(encoded) || refs.length != 1 || !encoded.equals(refs[0].getToAddress())) {
+                throw new AssertionError("Actual applied RTTI mutation encoded/reference provenance differs");
+            }
+            println("RTTI_MUTATION_REFERENCE field=" + address(offset) + " raw=" + encoded + " reference=" + refs[0].getToAddress());
+        }
         void mutate(String name) throws Exception {
             switch (name) {
                 case "flags": writeInt(0x1104, 1); break;
                 case "count": writeInt(0x1108, 1); break;
-                case "order": pointer(0x2100, 0x4140); pointer(0x2104, 0x4100); break;
-                case "name": pointer(0x4100, 0x3300); break;
+                case "order":
+                    pointer(0x2100, 0x4140); pointer(0x2104, 0x4100); refreshAppliedData(0x2100);
+                    assertEncodedReference(0x2100, 0x4140, false); assertEncodedReference(0x2104, 0x4100, false); break;
+                case "name":
+                    pointer(0x4100, 0x3300); refreshAppliedData(0x4100);
+                    assertEncodedReference(0x4100, 0x3300, false); break;
                 case "contained": writeInt(0x4104, 0); break;
                 case "mdisp": writeInt(0x4148, 32); break;
                 case "pdisp": writeInt(0x414c, 4); break;
@@ -262,13 +288,25 @@ public class RttiEquivalentLayoutNativeTest extends HeadlessScript {
                     Namespace other = p.getSymbolTable().createClass(p.getGlobalNamespace(), "OtherNamespace", SourceType.USER_DEFINED);
                     p.getSymbolTable().getPrimarySymbol(address(0x4140)).setNamespace(other); break;
                 case "orphan": p.getSymbolTable().getPrimarySymbol(address(0x1100)).delete(); break;
-                case "missing-bcd": pointer(0x2104, 0x20000); break;
+                case "missing-bcd":
+                    pointer(0x2104, 0x20000); refreshAppliedData(0x2100);
+                    if (p.getMemory().contains(address(0x20000))) { throw new AssertionError("Missing BCD producer unexpectedly mapped"); }
+                    break;
                 case "malformed-chd": p.getListing().clearCodeUnits(address(0x1100), address(0x110f), false); break;
                 case "relative-reference-conflict":
                 case "record-reference-conflict-x86": badReference(0x110c, 0x2000); break;
                 case "absolute-reference-conflict": badReference(0x7040, 0x6000); break;
-                case "col-type-conflict": pointer(0x610c, 0x3200); break;
-                case "missing-meta": if (x64) { p.getMemory().setLong(address(0x7040), 0); } else { writeInt(0x7040, 0); } break;
+                case "col-type-conflict":
+                    pointer(0x610c, 0x3200); refreshAppliedData(0x6100);
+                    assertEncodedReference(0x610c, 0x3200, false); break;
+                case "missing-meta":
+                    if (x64) { p.getMemory().setLong(address(0x7040), 0); } else { writeInt(0x7040, 0); }
+                    refreshAppliedData(0x7040);
+                    Address missingMeta = MSDataTypeUtils.getAbsoluteAddress(p, address(0x7040));
+                    if (missingMeta != null && p.getMemory().contains(missingMeta)) {
+                        throw new AssertionError("Missing meta producer unexpectedly decodes a mapped pointer");
+                    }
+                    break;
                 case "equivalent-raw-only-meta":
                     p.getReferenceManager().removeAllReferencesFrom(address(0x7040));
                     if (p.getReferenceManager().getReferencesFrom(address(0x7040)).length != 0) { throw new AssertionError("Actual raw-only absolute pointer producer failed"); }
