@@ -1,0 +1,32 @@
+name: Fork-only real VT function rename filter characterization
+on:
+  push:
+    branches: [validation/vt-function-rename-characterization-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/vt-function-rename-characterization.py /tmp/vt-function-rename-characterization.py
+      - run: git fetch origin 393399612433e402a724fb9cd1ac5b6451825843 && git checkout --detach 393399612433e402a724fb9cd1ac5b6451825843
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Actual VersionTracking UI filter and real program rename events
+        env:
+          HEAD_SHA: 393399612433e402a724fb9cd1ac5b6451825843
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/vt-function-rename-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: vt-function-rename-characterization
+          path: native-evidence/
+          retention-days: 14
