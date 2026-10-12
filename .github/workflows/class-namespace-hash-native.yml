@@ -1,0 +1,35 @@
+name: Fork-only class namespace hash native qualification
+on:
+  push:
+    branches: [validation/class-namespace-hash-native-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/class-namespace-hash-native-gate.py /tmp/class-namespace-hash-native-gate.py
+      - run: git fetch origin 9a256dce431512352bb45ccaa468b2d51be37f6c && git checkout --detach 9a256dce431512352bb45ccaa468b2d51be37f6c
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Validate real class hash baseline/fixed and original namespace cases/full build
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/class-namespace-hash-evidence
+          HEAD_SHA: 9a256dce431512352bb45ccaa468b2d51be37f6c
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/class-namespace-hash-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: class-namespace-hash-native-gate
+          path: ${{ runner.temp }}/class-namespace-hash-evidence/
+          retention-days: 14
