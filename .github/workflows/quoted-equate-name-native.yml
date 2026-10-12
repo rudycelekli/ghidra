@@ -1,0 +1,33 @@
+name: Fork-only quoted equate naming native qualification
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/quoted-equate-name-native-gate.py /tmp/quoted-equate-name-native-gate.py
+      - run: git fetch origin d0f7ab291f0c75c8133ed760482044972c15ea00 && git checkout --detach d0f7ab291f0c75c8133ed760482044972c15ea00
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Native baseline and fixed action regressions with full build
+        env:
+          KIND: quoted-equate-name
+          HEAD_SHA: d0f7ab291f0c75c8133ed760482044972c15ea00
+          CONFIG: >-
+            {"language":"java","production":"Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/EquateSymbol.java","test_task":":Decompiler:integrationTest","test_classes":["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","ghidra.app.decompiler.component.DecompilerCachingTest"],"result_dir":"Ghidra/Features/Decompiler/build/test-results/integrationTest","total":18,"class_counts":{"ghidra.app.plugin.core.decompile.QuotedEquateNameTest":12,"ghidra.app.decompiler.component.DecompilerCachingTest":6},"expected_cases":[["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testSingleQuoteCustomNameRemainsSymbol"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testDoubleQuoteCustomNameRemainsSymbol"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testOrdinaryCustomNameControl"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testActualCharacterConversionControl"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testNullCharacterConversionControl"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testNewlineCharacterConversionControl"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testQuoteCharacterConversionControl"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testBackslashCharacterConversionControl"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testPackedCharacterConversionControl"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testMixedRawByteCharacterConversionControl"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testEscapedSingleQuoteCustomNameRemainsSymbol"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testEscapedDoubleQuoteCustomNameRemainsSymbol"],["ghidra.app.decompiler.component.DecompilerCachingTest","testNewFunctionIsCacheMiss"],["ghidra.app.decompiler.component.DecompilerCachingTest","testReturnToPreviousFunctionIsCacheHit"],["ghidra.app.decompiler.component.DecompilerCachingTest","testCacheRemovesEntryWhenSizeIsExceeded"],["ghidra.app.decompiler.component.DecompilerCachingTest","testDomainChangeClearsTheCache"],["ghidra.app.decompiler.component.DecompilerCachingTest","testCacheIsClearedWhenProgramIsClosed"],["ghidra.app.decompiler.component.DecompilerCachingTest","testCacheIsClearedWhenOptionsChange"]],"failures":[["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testSingleQuoteCustomNameRemainsSymbol"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testDoubleQuoteCustomNameRemainsSymbol"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testEscapedSingleQuoteCustomNameRemainsSymbol"],["ghidra.app.plugin.core.decompile.QuotedEquateNameTest","testEscapedDoubleQuoteCustomNameRemainsSymbol"]]}
+        run: python /tmp/quoted-equate-name-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: quoted-equate-name-native
+          path: native-evidence/
+          retention-days: 14
