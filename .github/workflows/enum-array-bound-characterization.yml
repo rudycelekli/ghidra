@@ -1,0 +1,30 @@
+name: Fork-only C enum identifier array bounds characterization
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/enum-array-bound-characterization.py /tmp/enum-array-bound-characterization.py
+      - run: git fetch origin e68070e752ca6c7358e61ae71686e94ed9ea6a89 && git checkout --detach e68070e752ca6c7358e61ae71686e94ed9ea6a89
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Characterize actual C enum identifier array bounds
+        env:
+          HEAD_SHA: e68070e752ca6c7358e61ae71686e94ed9ea6a89
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/enum-array-bound-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: enum-array-bound-characterization
+          path: native-evidence/
+          retention-days: 14
