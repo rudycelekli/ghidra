@@ -1,7 +1,7 @@
 name: Fork-only native typed function-pointer token characterization
 on:
   push:
-    branches: [validation/typed-function-token-panel-observations-20261012]
+    branches: [validation/typed-function-token-real-tool-observations-20261012]
 permissions:
   contents: read
 jobs:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: cp .github/typed-function-token-characterization.py /tmp/typed-function-token-characterization.py
-      - run: git fetch origin 5a623f2dfa7db109c2402f78f4b7358cbe7a6a31 && git checkout --detach 5a623f2dfa7db109c2402f78f4b7358cbe7a6a31
+      - run: git fetch origin e215f88b320474ed74199719dbd99c6c768e4099 && git checkout --detach e215f88b320474ed74199719dbd99c6c768e4099
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -24,7 +24,7 @@ jobs:
       - name: Characterize actual native typed pointers and navigation controls
         env:
           EVIDENCE_DIR: ${{ runner.temp }}/typed-function-token-evidence
-          HEAD_SHA: 5a623f2dfa7db109c2402f78f4b7358cbe7a6a31
+          HEAD_SHA: e215f88b320474ed74199719dbd99c6c768e4099
           BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
         run: python /tmp/typed-function-token-characterization.py
       - uses: actions/upload-artifact@v7
