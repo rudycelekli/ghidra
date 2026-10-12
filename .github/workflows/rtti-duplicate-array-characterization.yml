@@ -12,6 +12,7 @@ jobs:
         run: |
           cp .github/rtti-duplicate-array-characterization.py /tmp/rtti-duplicate-array-characterization.py
           cp .github/RttiDuplicateArrayCharacterization.java /tmp/RttiDuplicateArrayCharacterization.java
+          git fetch origin 918d44ebc2962a53d23eeee52b8f44c7816e7815
           git checkout --detach 918d44ebc2962a53d23eeee52b8f44c7816e7815
       - uses: actions/setup-java@v5
         with:
