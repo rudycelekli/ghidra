@@ -1,0 +1,34 @@
+name: DWARF source dot-prefix native validation
+on:
+  push:
+    branches: [validation/dwarf-source-dot-prefix-native-20261011]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/dwarf-source-prefix-native-gate.py /tmp/dwarf-source-prefix-native-gate.py
+      - run: git fetch origin 7981de4209536caf89aac471c6e794b5a38a1867 && git checkout --detach 7981de4209536caf89aac471c6e794b5a38a1867
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: dwarf-source-prefix
+          HEAD_SHA: 7981de4209536caf89aac471c6e794b5a38a1867
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/java/ghidra/util/SourceFileUtils.java", "test_task": ":IntegrationTest:integrationTest", "test_classes": ["ghidra.program.database.sourcemap.SourceFileTest"], "class_counts": {"ghidra.program.database.sourcemap.SourceFileTest": 35}, "result_dir": "Ghidra/Test/IntegrationTest/build/test-results/integrationTest", "total": 35, "failures": [["ghidra.program.database.sourcemap.SourceFileTest", "testDwarfHiddenDirectoryIdentity"], ["ghidra.program.database.sourcemap.SourceFileTest", "testDwarfDotPrefixFilenameIdentity"], ["ghidra.program.database.sourcemap.SourceFileTest", "testDwarfParentThenHiddenDirectoryIdentity"], ["ghidra.program.database.sourcemap.SourceFileTest", "testDwarfMultipleParentsThenDotPrefixIdentity"], ["ghidra.program.database.sourcemap.SourceFileTest", "testDwarfConsumedArtificialRootSiblingIdentity"]], "expected_cases": [["ghidra.program.database.sourcemap.SourceFileTest", "testNonFilePathFailure"], ["ghidra.program.database.sourcemap.SourceFileTest", "testRelativePathCreateFailure"], ["ghidra.program.database.sourcemap.SourceFileTest", "testNullPathCreateFailure"], ["ghidra.program.database.sourcemap.SourceFileTest", "testEmptyPathCreateFailure"], ["ghidra.program.database.sourcemap.SourceFileTest", "testPathNormalizationLinux"], ["ghidra.program.database.sourcemap.SourceFileTest", "testInteriorPathNormalizationLinux"], ["ghidra.program.database.sourcemap.SourceFileTest", "testInteriorPathNormalizationLinuxUtilsMethod"], ["ghidra.program.database.sourcemap.SourceFileTest", "testInteriorPathNormalizationWindows"], ["ghidra.program.database.sourcemap.SourceFileTest", "testFixDwarfRelativePath"], ["ghidra.program.database.sourcemap.SourceFileTest", "testInteriorPathNormalizationWindowsUtilsMethod"], ["ghidra.program.database.sourcemap.SourceFileTest", "testGetFilename"], ["ghidra.program.database.sourcemap.SourceFileTest", "testUtilityMethod"], ["ghidra.program.database.sourcemap.SourceFileTest", "basicAddRemoveTest"], ["ghidra.program.database.sourcemap.SourceFileTest", "testContainsNull"], ["ghidra.program.database.sourcemap.SourceFileTest", "basicContainsTest"], ["ghidra.program.database.sourcemap.SourceFileTest", "testUndoAddingSourceFile"], ["ghidra.program.database.sourcemap.SourceFileTest", "testGetUri"], ["ghidra.program.database.sourcemap.SourceFileTest", "testIdentifierDisplayString"], ["ghidra.program.database.sourcemap.SourceFileTest", "testSamePathDifferentIdentifiers"], ["ghidra.program.database.sourcemap.SourceFileTest", "testSameIdentifierDifferentPaths"], ["ghidra.program.database.sourcemap.SourceFileTest", "testNoIdentifierNonNullArray"], ["ghidra.program.database.sourcemap.SourceFileTest", "testBadMd5Length"], ["ghidra.program.database.sourcemap.SourceFileTest", "testMd5NullArray"], ["ghidra.program.database.sourcemap.SourceFileTest", "testAddingNullSourceFile"], ["ghidra.program.database.sourcemap.SourceFileTest", "testRemovingNullSourceFile"], ["ghidra.program.database.sourcemap.SourceFileTest", "testConvertingNullArrayToLong"], ["ghidra.program.database.sourcemap.SourceFileTest", "testConvertingEmptyArrayToLong"], ["ghidra.program.database.sourcemap.SourceFileTest", "testLongConversion"], ["ghidra.program.database.sourcemap.SourceFileTest", "testHexStringToByteArrayConversion"], ["ghidra.program.database.sourcemap.SourceFileTest", "testByteArrayToHexStringConversion"], ["ghidra.program.database.sourcemap.SourceFileTest", "testDwarfHiddenDirectoryIdentity"], ["ghidra.program.database.sourcemap.SourceFileTest", "testDwarfDotPrefixFilenameIdentity"], ["ghidra.program.database.sourcemap.SourceFileTest", "testDwarfParentThenHiddenDirectoryIdentity"], ["ghidra.program.database.sourcemap.SourceFileTest", "testDwarfMultipleParentsThenDotPrefixIdentity"], ["ghidra.program.database.sourcemap.SourceFileTest", "testDwarfConsumedArtificialRootSiblingIdentity"]]}'
+        run: python /tmp/dwarf-source-prefix-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-dwarf-source-prefix
+          path: native-evidence/
+          retention-days: 14
