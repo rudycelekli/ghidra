@@ -63,7 +63,7 @@ def run(label, args, timeout=1800, **kwargs):
             process.wait(timeout=30)
             thread.join(timeout=30)
             if thread.is_alive():
-                raise RuntimeError("RTTI log pump did not terminate after process-group cleanup")
+                raise RuntimeError("VLE log pump did not terminate after process-group cleanup")
         r.setdefault('raw_logs', {})[label] = {'sha256': raw_hash.hexdigest(), 'bytes': raw_bytes, 'gzip_preserved': True}
         save()
         if errors:
@@ -166,13 +166,16 @@ try:
     for name in cases:
         inp, effect = inputs[name], effects[name]
         mode = '0' if name in ['standard-control', 'disabled-vle-control', 'nonexecutable-control', 'defined-data-control'] else '1'
+        standard_hex = '4e8000209421fff07c0802a6382100104e800020'
+        expected_hex = standard_hex if name in ['standard-control', 'nonexecutable-control', 'defined-data-control'] else '0004' + ('4444' if name in ['padded-stack', 'padded-lr-stack', 'padding-only-control'] else '') + ('0080' if name in ['direct-lr-stack', 'padded-lr-stack'] else '') + ('4444' if name == 'padding-only-control' else '182106f0') + '0004'
+        assert inp[0] == expected_hex
         assert inp[2] == effect[1] == mode
         assert inp[1] == ('false' if name == 'nonexecutable-control' else 'true')
         assert inp[5] == ('true' if name == 'defined-data-control' else 'false')
         expected_mnemonic = 'NONE' if name in ['defined-data-control', 'disabled-vle-control'] else 'stwu' if name in ['standard-control', 'nonexecutable-control'] else 'se_or' if name == 'padding-only-control' else 'se_mflr' if name in ['direct-lr-stack', 'padded-lr-stack'] else 'e_stwu'
         expected_length = '0' if expected_mnemonic == 'NONE' else '2' if expected_mnemonic in ['se_or', 'se_mflr'] else '4'
-        assert inp[3].lower() == expected_mnemonic and inp[4] == expected_length
-        expected_target = '1004' if name in ['padded-stack', 'padded-lr-stack', 'standard-control', 'padding-only-control', 'nonexecutable-control', 'defined-data-control'] else '1002'
+        assert inp[3].lower() == expected_mnemonic.lower() and inp[4] == expected_length
+        expected_target = '00001004' if name in ['padded-stack', 'padded-lr-stack', 'standard-control', 'padding-only-control', 'nonexecutable-control', 'defined-data-control'] else '00001002'
         assert effect[0] == expected_target
         assert effect[2] == ('true' if name == 'existing-control' else 'false')
         if name in ['standard-control', 'existing-control']:
@@ -183,7 +186,7 @@ try:
             missing += effect[3] == 'false'
             assert (int(effect[4]) > 0) == (effect[3] == 'true')
     mixed = [m for m in messages if m.startswith('VLE_NATIVE_MIXED ')]
-    assert mixed == ['VLE_NATIVE_MIXED standardTarget=1084 vle=0 function=true']
+    assert mixed == ['VLE_NATIVE_MIXED standardTarget=00001084 vle=0 function=true']
     outcomes = [m for m in messages if m.startswith('VLE_NATIVE_OUTCOME ')]
     expected = 'REPRODUCED' if missing == 5 else 'NOT_REPRODUCED' if missing == 0 else 'PARTIAL'
     assert outcomes == [f'VLE_NATIVE_OUTCOME cases=11 missingCandidates={missing} outcome={expected}']
