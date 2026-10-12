@@ -1,0 +1,32 @@
+name: Fork-only public CreateFunction command result characterization
+on:
+  push:
+    branches: [validation/create-function-result-characterization-corrective-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/create-function-result-characterization.py /tmp/create-function-result-characterization.py
+      - run: git fetch origin 1c4ad06c6665e936309d88b81f55fad1710ba5e0 && git checkout --detach 1c4ad06c6665e936309d88b81f55fad1710ba5e0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Actual public command return and effects on unchanged production
+        env:
+          HEAD_SHA: 1c4ad06c6665e936309d88b81f55fad1710ba5e0
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/create-function-result-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: create-function-result-characterization
+          path: native-evidence/
+          retention-days: 14
