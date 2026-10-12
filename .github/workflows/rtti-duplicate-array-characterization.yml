@@ -1,5 +1,7 @@
 name: Fork-only public RTTI duplicate array characterization
-on: [push]
+on:
+  push:
+    branches: [validation/rtti-descriptor-inventory-20261012]
 permissions:
   contents: read
 jobs:

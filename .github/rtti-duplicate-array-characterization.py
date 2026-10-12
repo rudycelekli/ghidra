@@ -1,3 +1,6 @@
+import gzip
+import threading
+import signal
 import hashlib
 import io
 import json
@@ -20,13 +23,88 @@ r = {'base': base, 'status': 'INCONCLUSIVE', 'production_unchanged': True,
 def save():
     (e / 'receipt.json').write_text(json.dumps(r, indent=2))
 
+def shutil_copy_stream(source, destination):
+    while chunk := source.read(1024 * 1024):
+        destination.write(chunk)
+
+
+def scan_rtti_log(path, marker_path):
+    full_hash = hashlib.sha256()
+    full_bytes = 0
+    marker_bytes = 0
+    bounded_exceeded = False
+    continuation = False
+    flags = {'timeout': False, 'ready': False, 'recovering': False,
+             'identified': False, 'expected_exception': False,
+             'inventory_complete': False, 'inventory_chd': False, 'inventory_bcd': False}
+    outcomes = {'REPRODUCED': 0, 'NOT_REPRODUCED': 0, 'INCONCLUSIVE': 0}
+    with gzip.open(path, 'rb') as stream, marker_path.open('wb') as compact:
+        while line := stream.readline(1024 * 1024):
+            full_hash.update(line)
+            full_bytes += len(line)
+            too_long = len(line) == 1024 * 1024 and not line.endswith(b'\n')
+            bounded_exceeded |= too_long
+            if not continuation and not too_long:
+                flags['timeout'] |= b'REPORT: Analysis timed out at' in line
+                flags['recovering'] |= b'Recovering classes using RTTI...' in line
+                flags['identified'] |= bool(re.search(rb'Identified [1-9][0-9]* classes to process and ', line))
+                prefix = b'RttiDuplicateArrayCharacterization.java> '
+                if prefix in line:
+                    message = line.split(prefix, 1)[1]
+                    if message.startswith((b'RTTI_PUBLIC_PE_READY ', b'RTTI_CHARACTERIZATION_', b'RTTI_INVENTORY_')):
+                        flags['ready'] |= message.startswith(b'RTTI_PUBLIC_PE_READY ') and b'pointerSize=8 analyzed=true' in message
+                        flags['expected_exception'] |= message.startswith(b'RTTI_CHARACTERIZATION_EXPECTED_EXCEPTION=More than one Base Class Array for ')
+                        flags['inventory_complete'] |= message.startswith(b'RTTI_INVENTORY_COMPLETE class=')
+                        flags['inventory_chd'] |= message.startswith(b'RTTI_INVENTORY_CHD address=')
+                        flags['inventory_bcd'] |= message.startswith(b'RTTI_INVENTORY_BCD chd=')
+                        for outcome in outcomes:
+                            outcomes[outcome] += message.startswith(('RTTI_CHARACTERIZATION_OUTCOME=' + outcome + ' ').encode()) or message.rstrip().endswith(('RTTI_CHARACTERIZATION_OUTCOME=' + outcome).encode())
+                        if marker_bytes + len(line) <= 16 * 1024 * 1024:
+                            compact.write(line)
+                            marker_bytes += len(line)
+                        else:
+                            bounded_exceeded = True
+            continuation = not line.endswith(b'\n')
+    return {'full_raw_log_sha256': full_hash.hexdigest(), 'full_raw_log_bytes': full_bytes,
+            'full_raw_log_preserved_gzip': True, 'compact_marker_bytes': marker_bytes,
+            'bounded_exceeded': bounded_exceeded, 'marker_flags': flags, 'outcome_counts': outcomes}
+
+
 def run(label, args, timeout=1800, **kwargs):
-    with (e / (label + '.log')).open('w') as output:
-        result = subprocess.run(args, stdout=output, stderr=subprocess.STDOUT,
-                                timeout=timeout, **kwargs)
-    r['steps'].append({'label': label, 'args': args, 'exit_code': result.returncode})
+    if label == 'actual-public-rtti-script':
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                   start_new_session=True, **kwargs)
+        errors = []
+        def pump():
+            try:
+                with gzip.open(e / (label + '.log.gz'), 'wb') as output:
+                    shutil_copy_stream(process.stdout, output)
+            except BaseException as error:
+                errors.append(error)
+        thread = threading.Thread(target=pump, daemon=True)
+        thread.start()
+        try:
+            exit_code = process.wait(timeout=timeout)
+        finally:
+            # analyzeHeadless -> launch.sh -> Java: terminate the session group, including
+            # descendants which could retain stdout after the shell exits or times out.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait(timeout=30)
+            thread.join(timeout=30)
+            if thread.is_alive():
+                raise RuntimeError("RTTI log pump did not terminate after process-group cleanup")
+        if errors:
+            raise errors[0]
+    else:
+        with (e / (label + '.log')).open('w') as output:
+            exit_code = subprocess.run(args, stdout=output, stderr=subprocess.STDOUT,
+                                       timeout=timeout, **kwargs).returncode
+    r['steps'].append({'label': label, 'args': args, 'exit_code': exit_code})
     save()
-    return result.returncode
+    return exit_code
 
 try:
     assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == base
@@ -89,19 +167,23 @@ try:
                '-import', str(fixture), '-analysisTimeoutPerFile', '1200', '-max-cpu', '2',
                '-scriptPath', '/tmp', '-postScript', 'RttiDuplicateArrayCharacterization.java',
                '-deleteProject'], timeout=2400) == 0
-    log = (e / 'actual-public-rtti-script.log').read_text()
-    assert 'REPORT: Analysis timed out at' not in log
-    assert 'RTTI_PUBLIC_PE_READY' in log and 'pointerSize=8 analyzed=true' in log
-    assert 'Recovering classes using RTTI...' in log
-    assert 'RTTI_CHARACTERIZATION_OUTCOME=INCONCLUSIVE' not in log
-    outcomes = [name for name in ('REPRODUCED', 'NOT_REPRODUCED')
-                if 'RTTI_CHARACTERIZATION_OUTCOME=' + name in log]
-    assert len(outcomes) == 1
-    if outcomes[0] == 'REPRODUCED':
-        assert 'RTTI_CHARACTERIZATION_EXPECTED_EXCEPTION=More than one Base Class Array for ' in log
+    observation = scan_rtti_log(e / 'actual-public-rtti-script.log.gz',
+                                e / 'actual-public-rtti-markers.log')
+    r.update(observation)
+    save()
+    assert not observation['bounded_exceeded'], 'Bounded log observation exceeded; full raw gzip retained'
+    flags = observation['marker_flags']
+    outcomes = observation['outcome_counts']
+    assert not flags['timeout'] and flags['ready'] and flags['recovering']
+    assert outcomes['INCONCLUSIVE'] == 0
+    assert outcomes['REPRODUCED'] + outcomes['NOT_REPRODUCED'] == 1
+    if outcomes['REPRODUCED']:
+        assert flags['expected_exception'] and flags['inventory_complete']
+        assert flags['inventory_chd'] and flags['inventory_bcd']
+        r['status'] = 'REPRODUCED'
     else:
-        assert re.search(r'Identified [1-9][0-9]* classes to process and ', log)
-    r['status'] = outcomes[0]
+        assert flags['identified']
+        r['status'] = 'NOT_REPRODUCED'
     assert not subprocess.check_output(['git', 'diff', '--name-only', 'HEAD'], text=True).strip()
 except Exception as error:
     r['status'] = 'INCONCLUSIVE'
