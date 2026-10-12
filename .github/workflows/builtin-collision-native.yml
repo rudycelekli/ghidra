@@ -1,0 +1,32 @@
+name: Built-in datatype collision diagnostics validation native validation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/builtin-collision-native-gate.py /tmp/builtin-collision-native-gate.py
+      - run: git fetch origin f815b0cf62bf931e487e232b75fc31705b542d88 && git checkout --detach f815b0cf62bf931e487e232b75fc31705b542d88
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Native regressions and full build
+        env:
+          KIND: builtin-collision
+          HEAD_SHA: f815b0cf62bf931e487e232b75fc31705b542d88
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/dtarchive/BuiltInDtArchiveDB.java", "test_task": ":Base:integrationTest", "test_classes": ["ghidra.program.database.dtarchive.BuiltInDataTypeCollisionTest", "ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest"], "class_counts": {"ghidra.program.database.dtarchive.BuiltInDataTypeCollisionTest": 2, "ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest": 39}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 41, "failures": [["ghidra.program.database.dtarchive.BuiltInDataTypeCollisionTest", "testIncompatibleExtensionCollisionIsReported"]], "expected_cases": [["ghidra.program.database.dtarchive.BuiltInDataTypeCollisionTest", "testIncompatibleExtensionCollisionIsReported"], ["ghidra.program.database.dtarchive.BuiltInDataTypeCollisionTest", "testUniqueExtensionIsDiscoveredAndResolved"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testInvalidArchive"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testCreateCategory"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testCreateCategory_WhileFiltered"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testCreatePointerFromBuiltin"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testCreateTypeDefFromDialog"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testRenameCategory"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testRenameDataTypeWithSameNameAsCategory"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testRenameCategoryDuplicate"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testCopyCategory2DataType"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testDeleteCategoryInProgram"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testDeleteCategoryInProgram2"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testBuiltInCategoryForDataTypes"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testBuiltInCategoryForCategories"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testCloseProgram"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testExpandAll"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testDetailedSearch"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testCollapseAll"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testTreeRemembersSelectionWhenSwitchingPrograms"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testDataTypePreviewCopyHtmlText"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testEditFunctionDefintionDataType"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testEditFunctionDefintionName"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testEditFunctionDefintionDataTypeParamNameOnly"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testEditingFunctionDefinitionWithNullParamName"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testEditingFunctionDefinitionWithVariousParameterNames"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testEditorActionsGetRegisteredWithoutEditing"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testAction_FindEnumByValue_Range"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testAction_FindStructureByOffset"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testAction_FindStructureByOffset_NoMatches"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testAction_FindStructureByOffset_Range"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testAction_FindStructureByOffset_MixedInput"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testAction_FindStructureBySize"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testAction_FindStructureBySize_Empty"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testAction_FindStructureBySize_Ranage"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testGetSelectedDatatypesFromService"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testFilter_DefaultFilter"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testFilter_Structures"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testFilter_Structures_HideTypeDefs"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testFilter_ClonedProvider"], ["ghidra.app.plugin.core.datamgr.DataTypeManagerPluginTest", "testSaveRestoreFilterStates"]]}'
+        run: python /tmp/builtin-collision-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-builtin-collision
+          path: native-evidence/
+          retention-days: 14
