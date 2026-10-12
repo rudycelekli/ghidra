@@ -1,0 +1,30 @@
+name: Fork-only isolated built-in extension collision characterization
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/builtin-collision-characterization.py /tmp/builtin-collision-characterization.py
+      - run: git fetch origin c03e44db8a597a8287b6eb9b02c7d5d8887fd4d5 && git checkout --detach c03e44db8a597a8287b6eb9b02c7d5d8887fd4d5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Characterize actual baseline extension startup only
+        env:
+          HEAD_SHA: c03e44db8a597a8287b6eb9b02c7d5d8887fd4d5
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/builtin-collision-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: builtin-collision-characterization
+          path: native-evidence/
+          retention-days: 14
