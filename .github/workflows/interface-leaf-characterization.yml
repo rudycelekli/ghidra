@@ -1,0 +1,30 @@
+name: Fork-only public native command parser characterization
+on:
+  push:
+    branches: [validation/interface-leaf-characterization-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/interface-leaf-characterization.py /tmp/interface-leaf-characterization.py
+      - run: git fetch origin d2058ca2f82cb8091f0e46e30592bf0ee98fcfae && git checkout --detach d2058ca2f82cb8091f0e46e30592bf0ee98fcfae
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native standalone console prerequisites
+        run: sudo apt-get update && sudo apt-get install -y binutils-dev
+      - name: Native parser matrix on unchanged production
+        env:
+          HEAD_SHA: d2058ca2f82cb8091f0e46e30592bf0ee98fcfae
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/interface-leaf-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: interface-leaf-characterization
+          path: native-evidence/
+          retention-days: 14
