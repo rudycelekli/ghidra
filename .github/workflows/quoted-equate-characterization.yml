@@ -1,0 +1,30 @@
+name: Fork-only quoted equate native characterization
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/quoted-equate-characterization-gate.py /tmp/quoted-equate-characterization-gate.py
+      - run: git fetch origin c6740d66c3fb87247152fdd16507628a035134fe && git checkout --detach c6740d66c3fb87247152fdd16507628a035134fe
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Actual native dual decompiler action investigation
+        env:
+          HEAD_SHA: c6740d66c3fb87247152fdd16507628a035134fe
+        run: python /tmp/quoted-equate-characterization-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: quoted-equate-characterization
+          path: native-evidence/
+          retention-days: 14
