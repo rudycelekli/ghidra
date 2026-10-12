@@ -148,23 +148,47 @@ public class RttiEquivalentLayoutNativeTest extends HeadlessScript {
                 array(0x2000, 0x4000, 0x4040); chd(0x1000, 0x2000);
                 if (!unique) { array(0x2100, 0x4100, 0x4140); chd(0x1100, 0x2100); }
             }
-            recoverer = new RTTIWindowsClassRecoverer(p, null, api, false, false, false, false, false, taskMonitor);
-            self = recoverer.createNewClass(selfNamespace, false);
-            parent = recoverer.createNewClass(baseNamespace, false);
-            self.addParent(parent);
             if (!zero && !name.equals("equivalent-no-vftable")) {
                 col(0x6000, 0x3000, 0x1000); meta(0x7000, 0x6000);
-                self.addVftableAddress(address(0x7000 + p.getDefaultPointerSize()));
                 if (!unique) {
                     col(0x6100, 0x3100, 0x1100); meta(0x7040, 0x6100);
-                    self.addVftableAddress(address(0x7040 + p.getDefaultPointerSize()));
                 }
             }
             p.flushEvents();
+            Namespace actualSelfNamespace = canonicalNamespace(0x4000, selfNamespace);
+            Namespace actualBaseNamespace = canonicalNamespace(0x4040, baseNamespace);
+            recoverer = new RTTIWindowsClassRecoverer(p, null, api, false, false, false, false, false, taskMonitor);
+            self = recoverer.createNewClass(actualSelfNamespace, false);
+            parent = recoverer.createNewClass(actualBaseNamespace, false);
+            self.addParent(parent);
+            if (!zero && !name.equals("equivalent-no-vftable")) {
+                self.addVftableAddress(address(0x7000 + p.getDefaultPointerSize()));
+                if (!unique) { self.addVftableAddress(address(0x7040 + p.getDefaultPointerSize())); }
+            }
+            assertCanonicalRegistration();
             }
             catch (Exception | Error failure) {
                 close();
                 throw failure;
+            }
+        }
+        Namespace canonicalNamespace(long bcdOffset, Namespace created) {
+            Symbol descriptor = p.getSymbolTable().getPrimarySymbol(address(bcdOffset));
+            if (descriptor == null || !descriptor.getName().equals("RTTI_Base_Class_Descriptor")) {
+                throw new AssertionError("Actual canonical BCD producer missing");
+            }
+            Namespace actual = descriptor.getParentNamespace();
+            if (!(actual instanceof GhidraClass) || actual.getID() != created.getID() ||
+                !actual.getName(true).equals(created.getName(true)) ||
+                actual.getSymbol().getProgram() != p || created.getSymbol().getProgram() != p) {
+                throw new AssertionError("Actual canonical BCD namespace provenance differs");
+            }
+            return actual;
+        }
+        void assertCanonicalRegistration() {
+            if (recoverer.getClass(canonicalNamespace(0x4000, selfNamespace)) != self ||
+                recoverer.getClass(canonicalNamespace(0x4040, baseNamespace)) != parent) {
+                throw new AssertionError("Actual canonical recovered-class registration differs");
             }
         }
         Address address(long offset) { return p.getAddressFactory().getDefaultAddressSpace().getAddress(0x10000000L + offset); }
@@ -264,6 +288,7 @@ public class RttiEquivalentLayoutNativeTest extends HeadlessScript {
             }
         }
         @SuppressWarnings("unchecked") void assertProductionOutputs(boolean zero) throws Exception {
+            assertCanonicalRegistration();
             List<RecoveredClass> hierarchy = (List<RecoveredClass>) call("getClassHierarchyFromRTTI", new Class<?>[]{RecoveredClass.class}, self);
             Data array = (Data) call("getBaseClassArray", new Class<?>[]{RecoveredClass.class}, self);
             int flags;
