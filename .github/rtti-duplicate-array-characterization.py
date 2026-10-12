@@ -80,6 +80,10 @@ try:
             ':Ghidra/Features/Decompiler/ghidra_scripts/' + relative])
         assert (scripts / relative).read_bytes() == original
         r['production_script_sha256'][relative] = hashlib.sha256(original).hexdigest()
+    r['headless_heap'] = os.environ['GHIDRA_HEADLESS_MAXMEM']
+    assert r['headless_heap'] == '4G'
+    r['host_meminfo'] = pathlib.Path('/proc/meminfo').read_text()
+    save()
     pathlib.Path('/tmp/rtti-project').mkdir()
     assert run('actual-public-rtti-script', [str(launches[0]), '/tmp/rtti-project', 'PublicRtti',
                '-import', str(fixture), '-analysisTimeoutPerFile', '1200', '-max-cpu', '2',

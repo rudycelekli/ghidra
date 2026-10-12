@@ -23,6 +23,7 @@ jobs:
           python-version: '3.12'
       - name: Actual public PE import and original RTTI recovery script
         env:
+          GHIDRA_HEADLESS_MAXMEM: 4G
           BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
         run: python /tmp/rtti-duplicate-array-characterization.py
       - uses: actions/upload-artifact@v7
