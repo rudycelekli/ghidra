@@ -1,0 +1,35 @@
+name: Fork-only template operator lookup native
+on:
+  push:
+    branches: [validation/template-operator-lookup-native-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/template-operator-native-gate.py /tmp/template-operator-native-gate.py
+      - run: git fetch origin 5a5c60b097d9a596c7269380faa610806cdfb0f6 && git checkout --detach 5a5c60b097d9a596c7269380faa610806cdfb0f6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Characterize real qualified operator lookup and unchanged parser/namespace tests
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/template-operator-evidence
+          HEAD_SHA: 5a5c60b097d9a596c7269380faa610806cdfb0f6
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/template-operator-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: template-operator-native
+          path: ${{ runner.temp }}/template-operator-evidence/
+          retention-days: 14
