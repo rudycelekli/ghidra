@@ -1,7 +1,7 @@
 name: Fork-only public console leaf arguments native qualification
 on:
   push:
-    branches: [validation/console-state-native-build-cleanup-20261012]
+    branches: [validation/console-state-native-parser-preservation-20261012]
 permissions:
   contents: read
 jobs:

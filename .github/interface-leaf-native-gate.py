@@ -67,22 +67,26 @@ def clean():
     assert not paths
 
 
-def preserve_xml_parser():
-    path = 'Ghidra/Features/Decompiler/src/decompile/cpp/xml.cc'
-    original = git_bytes(base, path)
-    assert (p / path).read_bytes() == original
-    os.utime(p / path, None)
-    assert (p / path).stat().st_mtime >= (cpp / 'xml.y').stat().st_mtime
-    return original
+def preserve_generated_parsers():
+    originals = {}
+    for name in ('xml', 'grammar'):
+        path = f'Ghidra/Features/Decompiler/src/decompile/cpp/{name}.cc'
+        original = git_bytes(base, path)
+        assert (p / path).read_bytes() == original
+        os.utime(p / path, None)
+        assert (p / path).stat().st_mtime >= (cpp / f'{name}.y').stat().st_mtime
+        originals[name] = original
+    return originals
 
 
 def build(label, unit=True):
-    parser = preserve_xml_parser()
+    parsers = preserve_generated_parsers()
     assert run(label + '-console-build', ['make', '-j2', 'decomp_opt'], cwd=cpp) == 0
     if unit:
         assert run(label + '-unit-build', ['make', '-j2', 'decomp_test_dbg'], cwd=cpp) == 0
-    assert (cpp / 'xml.cc').read_bytes() == parser
-    r[label + '_xml_parser_sha256'] = sha(parser)
+    for name, original in parsers.items():
+        assert (cpp / f'{name}.cc').read_bytes() == original
+        r[label + f'_{name}_parser_sha256'] = sha(original)
     r[label + '_console_sha256'] = sha((cpp / 'decomp_opt').read_bytes())
     save()
 
