@@ -1,0 +1,32 @@
+name: Fork-only native ARM call-site signature override characterization
+on:
+  push:
+    branches: [validation/arm-override-capacity-characterization-corrective-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/arm-override-capacity-characterization.py /tmp/arm-override-capacity-characterization.py
+      - run: git fetch origin fd3dd2f7e0aaa571d17e62508fe0e8a72029a7e3 && git checkout --detach fd3dd2f7e0aaa571d17e62508fe0e8a72029a7e3
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Actual persisted ARM override through current native decompiler
+        env:
+          HEAD_SHA: fd3dd2f7e0aaa571d17e62508fe0e8a72029a7e3
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/arm-override-capacity-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: arm-override-capacity-characterization
+          path: native-evidence/
+          retention-days: 14
