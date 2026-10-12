@@ -1,0 +1,35 @@
+name: Fork-only disassembly diagnostic after data creation characterization
+on:
+  push:
+    branches: [validation/bad-instruction-data-characterization-corrected-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/bad-instruction-data-characterization.py /tmp/bad-instruction-data-characterization.py
+      - run: git fetch origin 138a994f62b36dcc8a08f44e9f3dcc092704647a && git checkout --detach 138a994f62b36dcc8a08f44e9f3dcc092704647a
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Characterize real disassembly diagnostics and unchanged data creation tests
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/bad-instruction-data-evidence
+          HEAD_SHA: 138a994f62b36dcc8a08f44e9f3dcc092704647a
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/bad-instruction-data-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bad-instruction-data-characterization
+          path: ${{ runner.temp }}/bad-instruction-data-evidence/
+          retention-days: 14
