@@ -1,0 +1,31 @@
+name: Fork-only public Save All project archive characterization
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/save-all-archive-characterization.py /tmp/save-all-archive-characterization.py
+      - run: git fetch origin c1d03006153118901e87f0f0fa57e1ba1d761e3a && git checkout --detach c1d03006153118901e87f0f0fa57e1ba1d761e3a
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Characterize actual public Save All action
+        env:
+          HEAD_SHA: c1d03006153118901e87f0f0fa57e1ba1d761e3a
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/save-all-archive-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: save-all-archive-characterization
+          path: native-evidence/
+          retention-days: 14
