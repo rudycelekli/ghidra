@@ -1,0 +1,30 @@
+name: Fork-only C macro cast sign extension characterization
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/c-macro-cast-characterization.py /tmp/c-macro-cast-characterization.py
+      - run: git fetch origin 9b4e06fd80101c6abbe5710216c7250189e04096 && git checkout --detach 9b4e06fd80101c6abbe5710216c7250189e04096
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Characterize actual C macro cast sign extension
+        env:
+          HEAD_SHA: 9b4e06fd80101c6abbe5710216c7250189e04096
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/c-macro-cast-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: c-macro-cast-characterization
+          path: native-evidence/
+          retention-days: 14
