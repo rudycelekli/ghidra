@@ -1,0 +1,36 @@
+name: Fork-only RTTI label native baseline fixed qualification
+on:
+  push:
+    branches: [validation/rtti-type-info-label-native-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/rtti-type-info-label-native-gate.py /tmp/rtti-type-info-label-native-gate.py && cp .github/rtti-type-info-label-original-manifest.json /tmp/rtti-type-info-label-original-manifest.json
+      - run: git fetch origin 886137be01f8a4cf0fbd6a6325acaa8cf101fca0 && git checkout --detach 886137be01f8a4cf0fbd6a6325acaa8cf101fca0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Qualify actual Windows LABEL baseline fixed and complete build
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/rtti-type-info-label-evidence
+          ORIGINAL_MANIFEST: /tmp/rtti-type-info-label-original-manifest.json
+          HEAD_SHA: 886137be01f8a4cf0fbd6a6325acaa8cf101fca0
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/rtti-type-info-label-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: rtti-type-info-label-native
+          path: ${{ runner.temp }}/rtti-type-info-label-evidence/
+          retention-days: 14
