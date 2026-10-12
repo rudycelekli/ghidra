@@ -1,0 +1,32 @@
+name: Fork-only VT rename full native regression gate
+on:
+  push:
+    branches: [validation/vt-function-rename-refresh-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/vt-function-rename-native-gate.py /tmp/vt-function-rename-native-gate.py
+      - run: git fetch origin b0faddfb19f3416972458956b044df82730042cc && git checkout --detach b0faddfb19f3416972458956b044df82730042cc
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Actual VersionTracking UI filter and real program rename events
+        env:
+          HEAD_SHA: b0faddfb19f3416972458956b044df82730042cc
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/vt-function-rename-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: vt-function-rename-native-gate
+          path: native-evidence/
+          retention-days: 14
