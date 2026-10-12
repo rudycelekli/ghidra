@@ -190,7 +190,34 @@ try:
     outcomes = [m for m in messages if m.startswith('VLE_NATIVE_OUTCOME ')]
     expected = 'REPRODUCED' if missing == 5 else 'NOT_REPRODUCED' if missing == 0 else 'PARTIAL'
     assert outcomes == [f'VLE_NATIVE_OUTCOME cases=11 missingCandidates={missing} outcome={expected}']
-    assert not subprocess.check_output(['git', 'status', '--porcelain'], text=True).strip()
+    final_status = subprocess.check_output(['git', 'status', '--porcelain=v1', '-z'])
+    r['final_git_status'] = {'sha256': hashlib.sha256(final_status).hexdigest(),
+        'bytes': len(final_status), 'records': final_status.decode('utf-8', errors='backslashreplace').split('\0')}
+    (e / 'final-git-status.raw').write_bytes(final_status)
+    dirty_manifest = []
+    for tracked, command in [(True, ['git', 'diff', 'HEAD', '--name-only', '-z']),
+                             (False, ['git', 'ls-files', '--others', '--exclude-standard', '-z'])]:
+        for raw_name in subprocess.check_output(command).split(b'\0'):
+            if not raw_name:
+                continue
+            name = os.fsdecode(raw_name)
+            path = p / name
+            item = {'path': name, 'tracked': tracked, 'exists': path.exists(), 'symlink': path.is_symlink()}
+            if path.is_file() and not path.is_symlink():
+                digest = hashlib.sha256()
+                size = 0
+                with path.open('rb') as stream:
+                    for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                        digest.update(chunk)
+                        size += len(chunk)
+                item.update({'sha256': digest.hexdigest(), 'bytes': size})
+            if tracked:
+                original = subprocess.check_output(['git', 'show', base + ':' + name])
+                item['base_sha256'] = hashlib.sha256(original).hexdigest()
+            dirty_manifest.append(item)
+    r['dirty_output_manifest'] = dirty_manifest
+    save()
+    assert not final_status, 'Working tree changed; exact status and file manifests preserved'
     r['status'] = expected
     r['actual_missing_functions'] = missing
     r['publication_gate'] = False
