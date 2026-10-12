@@ -15,7 +15,7 @@ import urllib.request
 import zipfile
 
 p = pathlib.Path.cwd()
-e = p / 'native-evidence'
+e = pathlib.Path('/tmp/powerpc-vle-native-evidence')
 e.mkdir(exist_ok=True)
 base = os.environ['BASE_SHA']
 r = {'base': base, 'status': 'INCONCLUSIVE', 'discovery_only': True,

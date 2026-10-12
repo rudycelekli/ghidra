@@ -1,7 +1,7 @@
 name: Fork-only PowerPC VLE function-start characterization
 on:
   push:
-    branches: [validation/powerpc-vle-function-start-manifest-20261012]
+    branches: [validation/powerpc-vle-function-start-external-evidence-20261012]
 permissions:
   contents: read
 jobs:
@@ -33,5 +33,5 @@ jobs:
         if: always()
         with:
           name: powerpc-vle-function-start-characterization
-          path: native-evidence/
+          path: /tmp/powerpc-vle-native-evidence/
           retention-days: 14
