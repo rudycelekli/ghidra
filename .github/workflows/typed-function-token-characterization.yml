@@ -1,0 +1,35 @@
+name: Fork-only native typed function-pointer token characterization
+on:
+  push:
+    branches: [validation/typed-function-token-characterization-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/typed-function-token-characterization.py /tmp/typed-function-token-characterization.py
+      - run: git fetch origin 4a0b193fba6817894f12e26a339551f7e81962d8 && git checkout --detach 4a0b193fba6817894f12e26a339551f7e81962d8
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Characterize actual native typed pointers and navigation controls
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/typed-function-token-evidence
+          HEAD_SHA: 4a0b193fba6817894f12e26a339551f7e81962d8
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/typed-function-token-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: typed-function-token-characterization
+          path: ${{ runner.temp }}/typed-function-token-evidence/
+          retention-days: 14
