@@ -269,6 +269,20 @@ public class RttiEquivalentLayoutNativeTest extends HeadlessScript {
             int flags;
             try { flags = (int) call("getClassInheritanceFlag", new Class<?>[]{RecoveredClass.class}, self); }
             catch (NoSuchMethodException oldSignature) { flags = (int) call("getClassInheritanceFlag", new Class<?>[]{Namespace.class}, selfNamespace); }
+            println("RTTI_PRODUCTION_DIAGNOSTIC hierarchySize=" + hierarchy.size() +
+                " selfIdentity=" + (!hierarchy.isEmpty() && hierarchy.get(0) == self) +
+                " parentIdentity=" + (hierarchy.size() > 1 && hierarchy.get(1) == parent) +
+                " array=" + (array == null ? "null" : array.getAddress()) +
+                " components=" + (array == null ? -1 : array.getNumComponents()) + " flags=" + flags);
+            for (int i = 0; i < hierarchy.size(); i++) {
+                println("RTTI_PRODUCTION_DIAGNOSTIC index=" + i + " namespace=" + hierarchy.get(i).getClassNamespace().getName(true));
+            }
+            for (long offset : new long[]{0x1000, 0x2000, 0x2004, 0x4000, 0x4040}) {
+                Symbol symbol = p.getSymbolTable().getPrimarySymbol(address(offset));
+                println("RTTI_PRODUCTION_DIAGNOSTIC address=" + address(offset) + " symbol=" +
+                    (symbol == null ? "null" : symbol.getName(true)) + " refs=" +
+                    java.util.Arrays.toString(p.getReferenceManager().getReferencesFrom(address(offset))));
+            }
             if (zero) {
                 if (!hierarchy.isEmpty() || array != null || flags != -1) { throw new AssertionError("Zero-array legacy outputs changed"); }
                 return;

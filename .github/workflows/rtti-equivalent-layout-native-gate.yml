@@ -1,7 +1,7 @@
 name: Fork-only RTTI equivalent-layout native regression gate
 on:
   push:
-    branches: [validation/rtti-equivalent-layout-windows-native-20261012]
+    branches: [validation/rtti-equivalent-layout-diagnostics-20261012]
 permissions:
   contents: read
 jobs:
