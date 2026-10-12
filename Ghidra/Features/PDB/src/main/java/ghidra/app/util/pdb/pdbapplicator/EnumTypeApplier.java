@@ -96,7 +96,10 @@ public class EnumTypeApplier extends AbstractComplexTypeApplier {
 		AbstractEnumMsType definedEnum =
 			(AbstractEnumMsType) applicator.getMappedTypeRecord(type.getRecordNumber());
 
-		// Note that we do not need to check on underlying data types, as there are none.
+		// The primitive underlying type may not have been processed by another record.
+		if (applicator.getDataTypeOrSchedule(definedEnum.getUnderlyingRecordNumber()) == null) {
+			return false;
+		}
 
 		EnumDataType enumDataType = createEmptyEnum(definedEnum);
 		applyEnumMsType(enumDataType, definedEnum);
@@ -160,7 +163,12 @@ public class EnumTypeApplier extends AbstractComplexTypeApplier {
 			pdbLogAndInfoMessage(this, "Using zero in place of non-integral enumerate: " + numeric);
 			return 0L; //
 		}
-		return numeric.getIntegral().longValue() & getMask(type);
+		long value = numeric.getIntegral().longValue() & getMask(type);
+		if (outputSigned && outputSize < Long.BYTES) {
+			int shift = Long.SIZE - outputSize * Byte.SIZE;
+			value = (value << shift) >> shift;
+		}
+		return value;
 	}
 
 	private AbstractEnumMsType getDefinitionType(AbstractComplexMsType type) {
