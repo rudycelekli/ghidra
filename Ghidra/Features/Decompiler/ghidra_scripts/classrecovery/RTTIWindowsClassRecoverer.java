@@ -18,6 +18,9 @@ package classrecovery;
 
 import java.util.*;
 
+import ghidra.app.cmd.data.TypeDescriptorModel;
+import ghidra.app.util.datatype.microsoft.DataValidationOptions;
+import ghidra.app.util.datatype.microsoft.MSDataTypeUtils;
 import ghidra.app.decompiler.util.FillOutStructureHelper;
 import ghidra.app.decompiler.util.FillOutStructureHelper.OffsetPcodeOpPair;
 import ghidra.app.util.opinion.PeLoader;
@@ -1014,7 +1017,7 @@ public class RTTIWindowsClassRecoverer extends RTTIClassRecoverer {
 
 			RecoveredClass recoveredClass = recoveredClassesIterator.next();
 
-			int inheritanceFlag = getClassInheritanceFlag(recoveredClass.getClassNamespace());
+			int inheritanceFlag = getClassInheritanceFlag(recoveredClass);
 			if (inheritanceFlag == NONE) {
 				Msg.debug(this,
 					"Could not get inheritance attribute from class hierarchy structure for " +
@@ -1149,13 +1152,9 @@ public class RTTIWindowsClassRecoverer extends RTTIClassRecoverer {
 
 		List<RecoveredClass> classHierarchy = new ArrayList<RecoveredClass>();
 
-		List<Symbol> symbols = extendedFlatAPI.getListOfSymbolsByNameInNamespace(
-			RTTI_BASE_CLASS_ARRAY_LABEL, recoveredClass.getClassNamespace(), false);
-
-		if (symbols.size() == 1) {
-			Symbol rttiBaseClassSymbol = symbols.get(0);
-			Address rttiBaseClassAddress = rttiBaseClassSymbol.getAddress();
-			Data rttiBaseClassDescriptorArray = api.getDataAt(rttiBaseClassAddress);
+		ResolvedRttiHierarchy resolved = resolveRttiHierarchy(recoveredClass);
+		if (resolved.arrayCount() > 0) {
+			Data rttiBaseClassDescriptorArray = resolved.array();
 			int numPointers = rttiBaseClassDescriptorArray.getNumComponents();
 
 			for (int i = 0; i < numPointers; ++i) {
@@ -1205,10 +1204,6 @@ public class RTTIWindowsClassRecoverer extends RTTIClassRecoverer {
 
 			}
 		}
-		else if (symbols.size() > 1) {
-			throw new IllegalArgumentException("More than one Base Class Array for " +
-				recoveredClass.getClassNamespace().getName(true));
-		}
 		return classHierarchy;
 	}
 
@@ -1220,11 +1215,15 @@ public class RTTIWindowsClassRecoverer extends RTTIClassRecoverer {
 	 * @throws MemoryAccessException if memory cannot be read
 	 * @throws AddressOutOfBoundsException if try reading memory out of bounds
 	 */
-	private int getClassInheritanceFlag(Namespace classNamespace)
+	private int getClassInheritanceFlag(RecoveredClass recoveredClass)
 			throws CancelledException, MemoryAccessException, AddressOutOfBoundsException {
 
+		ResolvedRttiHierarchy resolved = resolveRttiHierarchy(recoveredClass);
+		if (resolved.arrayCount() > 1) {
+			return resolved.flags();
+		}
 		List<Symbol> symbols = extendedFlatAPI.getListOfSymbolsByNameInNamespace(
-			RTTI_CLASS_HIERARCHY_DESCRIPTOR_LABEL, classNamespace, false);
+			RTTI_CLASS_HIERARCHY_DESCRIPTOR_LABEL, recoveredClass.getClassNamespace(), false);
 
 		if (symbols.size() >= 1) {
 			return (extendedFlatAPI.getInt(symbols.get(0).getAddress().add(4)));
@@ -1377,17 +1376,16 @@ public class RTTIWindowsClassRecoverer extends RTTIClassRecoverer {
 
 			// iterate over base class array and for each parent class of the given recovered class 
 			// get the mdisp, pdisp, vdisp info
-			List<Symbol> baseClassArray = extendedFlatAPI.getListOfSymbolsByNameInNamespace(
-				RTTI_BASE_CLASS_ARRAY_LABEL, recoveredClass.getClassNamespace(), false);
+			ResolvedRttiHierarchy resolved = resolveRttiHierarchy(recoveredClass);
 
 			// this should never happen
-			if (baseClassArray.size() != 1) {
+			if (resolved.arrayCount() == 0) {
 				throw new Exception(
 					recoveredClass.getName() + " has more than one RTTI base class array");
 			}
 
-			Address baseClassArrayAddress = baseClassArray.get(0).getAddress();
-			Data baseClassArrayData = api.getDataAt(baseClassArrayAddress);
+			Data baseClassArrayData = resolved.array();
+			Address baseClassArrayAddress = baseClassArrayData.getAddress();
 
 			if (!baseClassArrayData.isArray()) {
 				throw new Exception(
@@ -2571,17 +2569,163 @@ public class RTTIWindowsClassRecoverer extends RTTIClassRecoverer {
 	 * @return the base class array data type or null 
 	 * @throws CancelledException when cancelled
 	 */
+	private record ResolvedRttiHierarchy(Data array, int arrayCount, int flags) {}
+
+	private record RttiBaseLayout(String decoratedName, Namespace namespace, int containedBases,
+			int mdisp, int pdisp, int vdisp, int attributes) {}
+
+	private ResolvedRttiHierarchy resolveRttiHierarchy(RecoveredClass recoveredClass)
+			throws CancelledException {
+		Namespace namespace = recoveredClass.getClassNamespace();
+		List<Symbol> arrays = extendedFlatAPI.getListOfSymbolsByNameInNamespace(
+			RTTI_BASE_CLASS_ARRAY_LABEL, namespace, false);
+		// Keep the existing callers' zero/single-array behavior.
+		if (arrays.size() <= 1) {
+			return new ResolvedRttiHierarchy(
+				arrays.isEmpty() ? null : api.getDataAt(arrays.get(0).getAddress()),
+				arrays.size(), NONE);
+		}
+		try {
+			Map<Address, Data> candidates = new TreeMap<>();
+			for (Symbol symbol : arrays) {
+				monitor.checkCancelled();
+				Address address = symbol.getAddress();
+				Data array = api.getDataAt(address);
+				if (array == null || !array.isArray() || array.getNumComponents() <= 0) {
+					throw new IllegalArgumentException("Invalid RTTI base class array at " + address);
+				}
+				candidates.put(address, array);
+			}
+			List<Symbol> descriptors = extendedFlatAPI.getListOfSymbolsByNameInNamespace(
+				RTTI_CLASS_HIERARCHY_DESCRIPTOR_LABEL, namespace, false);
+			Map<Address, List<RttiBaseLayout>> layouts = new HashMap<>();
+			Map<Address, Address> descriptorArrays = new HashMap<>();
+			Integer flags = null;
+			List<RttiBaseLayout> expected = null;
+			for (Symbol descriptor : descriptors) {
+				monitor.checkCancelled();
+				Address chd = descriptor.getAddress();
+				requireRttiData(chd, RTTI_CLASS_HIERARCHY_DESCRIPTOR_DATA_NAME, 16);
+				Address arrayAddress = requireRttiReference(chd.add(12));
+				Data array = candidates.get(arrayAddress);
+				int count = api.getInt(chd.add(8));
+				if (array == null || count != array.getNumComponents()) {
+					throw new IllegalArgumentException("Unassociated RTTI array or count at " + chd);
+				}
+				int descriptorFlags = api.getInt(chd.add(4));
+				if (flags != null && flags != descriptorFlags) {
+					throw new IllegalArgumentException("Conflicting RTTI inheritance flags at " + chd);
+				}
+				flags = descriptorFlags;
+				List<RttiBaseLayout> layout = readRttiBaseLayout(array);
+				if (!layout.get(0).namespace().equals(namespace)) {
+					throw new IllegalArgumentException("RTTI self descriptor namespace differs at " + chd);
+				}
+				if (expected != null && !expected.equals(layout)) {
+					throw new IllegalArgumentException("Conflicting RTTI base class layout at " + chd);
+				}
+				expected = layout;
+				layouts.put(arrayAddress, layout);
+				descriptorArrays.put(chd, arrayAddress);
+			}
+			if (!layouts.keySet().equals(candidates.keySet()) || expected == null) {
+				throw new IllegalArgumentException("Orphan RTTI base class array for " +
+					namespace.getName(true));
+			}
+			for (Address vftable : recoveredClass.getVftableAddresses()) {
+				monitor.checkCancelled();
+				Address pointer = vftable.subtract(defaultPointerSize);
+				Address col = requireRttiAbsoluteReference(pointer);
+				requireRttiData(col, RTTI_BASE_COMPLETE_OBJECT_LOADER_DATA_NAME, 20);
+				Address chd = requireRttiReference(col.add(16));
+				Address array = descriptorArrays.get(chd);
+				if (array == null) {
+					throw new IllegalArgumentException("Unassociated RTTI class hierarchy at " + col);
+				}
+				String typeName = readRttiTypeName(requireRttiReference(col.add(12)));
+				if (!typeName.equals(layouts.get(array).get(0).decoratedName())) {
+					throw new IllegalArgumentException("Conflicting RTTI locator type at " + col);
+				}
+			}
+			return new ResolvedRttiHierarchy(candidates.values().iterator().next(), arrays.size(), flags);
+		}
+		catch (MemoryAccessException | InvalidDataTypeException e) {
+			throw new IllegalArgumentException("Invalid duplicate RTTI hierarchy for " +
+				namespace.getName(true) + ": " + e.getMessage(), e);
+		}
+	}
+
+	private void requireRttiData(Address address, String typeName, int minimumLength) {
+		Data data = api.getDataAt(address);
+		if (data == null || !data.isStructure() || data.getLength() < minimumLength ||
+			!data.getDataType().getName().contains(typeName)) {
+			throw new IllegalArgumentException("Missing applied " + typeName + " at " + address);
+		}
+	}
+
+	private Address requireRttiReference(Address pointer) {
+		Address address = MSDataTypeUtils.getReferencedAddress(program, pointer);
+		if (address == null || !program.getMemory().contains(address)) {
+			throw new IllegalArgumentException("Missing encoded RTTI reference at " + pointer);
+		}
+		Reference[] references = extendedFlatAPI.getReferencesFrom(pointer);
+		if (references.length != 1 || !address.equals(references[0].getToAddress())) {
+			throw new IllegalArgumentException("Missing, ambiguous or conflicting RTTI reference at " + pointer);
+		}
+		return address;
+	}
+
+	private Address requireRttiAbsoluteReference(Address pointer) {
+		Address address = MSDataTypeUtils.getAbsoluteAddress(program, pointer);
+		if (address == null || !program.getMemory().contains(address)) {
+			throw new IllegalArgumentException("Missing encoded RTTI absolute pointer at " + pointer);
+		}
+		Reference[] references = extendedFlatAPI.getReferencesFrom(pointer);
+		// The existing vftable-meta consumer reads the absolute bytes, even without a reference.
+		if (references.length > 1 ||
+			(references.length == 1 && !address.equals(references[0].getToAddress()))) {
+			throw new IllegalArgumentException("Ambiguous or conflicting RTTI absolute reference at " + pointer);
+		}
+		return address;
+	}
+
+	private String readRttiTypeName(Address address) throws InvalidDataTypeException {
+		TypeDescriptorModel model = new TypeDescriptorModel(program, address,
+			new DataValidationOptions());
+		return model.getTypeName();
+	}
+
+	private List<RttiBaseLayout> readRttiBaseLayout(Data array)
+			throws CancelledException, MemoryAccessException, InvalidDataTypeException {
+		List<RttiBaseLayout> result = new ArrayList<>();
+		for (int i = 0; i < array.getNumComponents(); i++) {
+			monitor.checkCancelled();
+			Data component = array.getComponent(i);
+			if (component == null || component.getLength() != 4) {
+				throw new IllegalArgumentException("Invalid RTTI array component at " + array.getAddress());
+			}
+			Address bcd = requireRttiReference(component.getAddress());
+			requireRttiData(bcd, RTTI_BASE_CLASS_DESCRIPTOR_DATA_NAME, 24);
+			Symbol symbol = symbolTable.getPrimarySymbol(bcd);
+			if (symbol == null || symbol.getParentNamespace().equals(globalNamespace)) {
+				throw new IllegalArgumentException("Missing RTTI base class namespace at " + bcd);
+			}
+			Address type = requireRttiReference(bcd);
+			result.add(new RttiBaseLayout(readRttiTypeName(type), symbol.getParentNamespace(),
+				api.getInt(bcd.add(4)), api.getInt(bcd.add(8)), api.getInt(bcd.add(12)),
+				api.getInt(bcd.add(16)), api.getInt(bcd.add(20))));
+		}
+		return List.copyOf(result);
+	}
+
 	private Data getBaseClassArray(RecoveredClass recoveredClass) throws CancelledException {
 
-		List<Symbol> baseClassArray = extendedFlatAPI.getListOfSymbolsByNameInNamespace(
-			RTTI_BASE_CLASS_ARRAY_LABEL, recoveredClass.getClassNamespace(), false);
-
-		if (baseClassArray.size() != 1) {
+		ResolvedRttiHierarchy resolved = resolveRttiHierarchy(recoveredClass);
+		if (resolved.arrayCount() == 0) {
 			return null;
 		}
 
-		Address baseClassArrayAddress = baseClassArray.get(0).getAddress();
-		Data baseClassArrayData = api.getDataAt(baseClassArrayAddress);
+		Data baseClassArrayData = resolved.array();
 		if (!baseClassArrayData.isArray()) {
 			return null;
 		}
