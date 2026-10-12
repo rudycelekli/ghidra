@@ -1,0 +1,33 @@
+name: Fork-only external callee naming native qualification
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/external-callee-name-native-gate.py /tmp/external-callee-name-native-gate.py
+      - run: git fetch origin 150cd09bfc53a733cb85443470bc09096be0ab2c && git checkout --detach 150cd09bfc53a733cb85443470bc09096be0ab2c
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Native baseline and fixed action regressions with full build
+        env:
+          KIND: external-callee-name
+          HEAD_SHA: 150cd09bfc53a733cb85443470bc09096be0ab2c
+          CONFIG: >-
+            {"language":"java","productions":["Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/decompile/AbstractMatchedCalleeTokensAction.java","Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/decompile/ApplyCalleeFunctionNameFromMatchedTokensAction.java"],"test_task":":CodeCompare:test","test_classes":["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","ghidra.features.codecompare.plugin.CompareFunctionsProviderTest"],"result_dir":"Ghidra/Features/CodeCompare/build/test-results/test","total":19,"class_counts":{"ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest":9,"ghidra.features.codecompare.plugin.CompareFunctionsProviderTest":10},"expected_cases":[["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testExternalCalleeNameCanBeTransferred"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testInternalCalleeNameControl"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testExternalSourceInternalTargetNameCanBeTransferred"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testInternalSourceExternalTargetNameCanBeTransferred"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testCompareExternalCalleesRemainRejected"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testExternalLibraryNamespaceCanBeTransferred"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testInternalNamespaceCanBeTransferred"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testEmptySignatureExternalCalleesRemainRejected"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testTypedSignatureExternalCalleesRemainRejected"],["ghidra.features.codecompare.plugin.CompareFunctionsProviderTest","testRemoveLastItem"],["ghidra.features.codecompare.plugin.CompareFunctionsProviderTest","testCloseProgram"],["ghidra.features.codecompare.plugin.CompareFunctionsProviderTest","testNextPreviousAction"],["ghidra.features.codecompare.plugin.CompareFunctionsProviderTest","testNextPreviousActionSwitchPanelFocus"],["ghidra.features.codecompare.plugin.CompareFunctionsProviderTest","testOpenFunctionTableActionForAdd"],["ghidra.features.codecompare.plugin.CompareFunctionsProviderTest","testAddFunctionToExistingCompare"],["ghidra.features.codecompare.plugin.CompareFunctionsProviderTest","testDeleteFunctionFromListing"],["ghidra.features.codecompare.plugin.CompareFunctionsProviderTest","testCustomComparison"],["ghidra.features.codecompare.plugin.CompareFunctionsProviderTest","testCustomComparitorCloseCallack"],["ghidra.features.codecompare.plugin.CompareFunctionsProviderTest","testAddToComparison"]],"failures":[["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testExternalCalleeNameCanBeTransferred"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testExternalSourceInternalTargetNameCanBeTransferred"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testInternalSourceExternalTargetNameCanBeTransferred"],["ghidra.features.codecompare.decompile.ExternalCalleeFunctionNameTest","testExternalLibraryNamespaceCanBeTransferred"]]}
+        run: python /tmp/external-callee-name-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: external-callee-name-native
+          path: native-evidence/
+          retention-days: 14
