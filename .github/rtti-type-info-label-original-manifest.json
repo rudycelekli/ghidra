@@ -1,0 +1,68 @@
+{
+  "Ghidra/Features/MicrosoftCodeAnalyzer/src/test/java/ghidra/app/cmd/data/rtti/AbstractRttiTest.java": {
+    "class": "ghidra.app.cmd.data.rtti.AbstractRttiTest",
+    "methods": [],
+    "sha256": "c75b5ccd666759693e04251dc87d88650b8e5c03e01b9ce3e27fe1a0a84678e8"
+  },
+  "Ghidra/Features/MicrosoftCodeAnalyzer/src/test/java/ghidra/app/cmd/data/rtti/RttiCreateCmdTest.java": {
+    "class": "ghidra.app.cmd.data.rtti.RttiCreateCmdTest",
+    "methods": [
+      "testValidRtti4Cmd_32CompleteFlow",
+      "testValidRtti3Cmd_32FollowFlow",
+      "testValidRtti2Cmd_32FollowFlow",
+      "testValidRtti1Cmd_32FollowFlow",
+      "testValidRtti0Cmd_32FollowFlow",
+      "testValidRtti4Cmd_64CompleteFlow",
+      "testValidRtti3Cmd_64FollowFlow",
+      "testValidRtti2Cmd_64FollowFlow",
+      "testValidRtti1Cmd_64FollowFlow",
+      "testValidRtti0Cmd_64FollowFlow",
+      "testValidRtti4Cmd_32NoFollowFlow",
+      "testValidRtti3Cmd_32NoFollowFlow",
+      "testValidRtti2Cmd_32NoFollowFlow",
+      "testValidRtti1Cmd_32NoFollowFlow",
+      "testValidRtti0Cmd_32NoFollowFlow",
+      "testValidRtti4Cmd_64NoFollowFlow",
+      "testValidRtti3Cmd_64NoFollowFlow",
+      "testValidRtti2Cmd_64NoFollowFlow",
+      "testValidRtti1Cmd_64NoFollowFlow",
+      "testValidRtti0Cmd_64NoFollowFlow"
+    ],
+    "sha256": "bf6d690ed2e0d512d89fb87b87e8f010c1e55efe64bc93578e7d880092435413"
+  },
+  "Ghidra/Features/MicrosoftCodeAnalyzer/src/test/java/ghidra/app/cmd/data/rtti/RttiModelTest.java": {
+    "class": "ghidra.app.cmd.data.rtti.RttiModelTest",
+    "methods": [
+      "testValidRtti4_32NoFollowData",
+      "testInvalidRtti4_32wFollowDataToBadRtti0VfTableRef",
+      "testInvalidRtti4_32wFollowDataToBadRtti0_UninitBlock",
+      "testInvalidRtti4_32wRtti0OutsideMem",
+      "testInvalidRtti4_32wRtti3OutsideMem",
+      "testInvalidRtti4_32OutsideMem",
+      "testValidRtti_32PartialFlow",
+      "testValidRtti_32CompleteFlow",
+      "testValidRtti4_32NoFollowFlow",
+      "testValidRtti3_32NoFollowFlow",
+      "testValidRtti2_32NoFollowFlow",
+      "testValidRtti1_32NoFollowFlow",
+      "testValidRtti0_32NoFollowFlow",
+      "testValidVfTable_32NoFollowFlow",
+      "testInvalidRtti4_32NoFollowFlow",
+      "testInvalidRtti3_32NoFollowFlow",
+      "testInvalidRtti2_32NoFollowFlow",
+      "testInvalidRtti1_32NoFollowFlow",
+      "testInvalidRtti0_32NoFollowFlow",
+      "testInvalidVfTable_32NoFollowFlow",
+      "testValidInheritanceRtti_32CompleteFlow",
+      "testValidInheritanceRtti_64CompleteFlow",
+      "testValidRtti4Model_64NoFollowFlow",
+      "testValidRtti3Model_64NoFollowFlow",
+      "testValidRtti2Model_64NoFollowFlow",
+      "testValidRtti1Model_64NoFollowFlow",
+      "testValidRtti0Model_64NoFollowFlow",
+      "testValidVfTableModel_64NoFollowFlow",
+      "testInstructionsInWayRtti1_64NoFollowFlow"
+    ],
+    "sha256": "716a5137546d4c6cd438ae9e23360e0b0aecb4b9685591da691f329914bce06b"
+  }
+}
