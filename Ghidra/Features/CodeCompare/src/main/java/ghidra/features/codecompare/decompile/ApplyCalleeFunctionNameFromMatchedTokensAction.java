@@ -45,6 +45,11 @@ public class ApplyCalleeFunctionNameFromMatchedTokensAction
 	}
 
 	@Override
+	protected boolean allowsExternalCallees() {
+		return true;
+	}
+
+	@Override
 	protected void doCalleeActionPerformed(Function leftFunction, Function rightFunction) {
 
 		Side activeSide = comparisonProvider.getActiveSide();
