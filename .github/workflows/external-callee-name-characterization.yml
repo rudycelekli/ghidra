@@ -1,0 +1,30 @@
+name: Fork-only external callee name characterization
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/external-callee-name-characterization-gate.py /tmp/external-callee-name-characterization-gate.py
+      - run: git fetch origin d12a3fe94dd5c574b5264508010520553bb98cdc && git checkout --detach d12a3fe94dd5c574b5264508010520553bb98cdc
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Actual native dual decompiler action investigation
+        env:
+          HEAD_SHA: d12a3fe94dd5c574b5264508010520553bb98cdc
+        run: python /tmp/external-callee-name-characterization-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: external-callee-name-characterization
+          path: native-evidence/
+          retention-days: 14
