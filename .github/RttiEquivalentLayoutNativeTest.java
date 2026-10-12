@@ -178,7 +178,9 @@ public class RttiEquivalentLayoutNativeTest extends HeadlessScript {
                 throw new AssertionError("Actual canonical BCD producer missing");
             }
             Namespace actual = descriptor.getParentNamespace();
-            if (!(actual instanceof GhidraClass) || actual.getID() != created.getID() ||
+            println("RTTI_NAMESPACE_PROVENANCE id=" + actual.getID() + " equalsCreated=" + actual.equals(created) +
+                " actualHash=" + actual.hashCode() + " createdHash=" + created.hashCode());
+            if (!(actual instanceof GhidraClass) || actual.getID() != created.getID() || !actual.equals(created) ||
                 !actual.getName(true).equals(created.getName(true)) ||
                 actual.getSymbol().getProgram() != p || created.getSymbol().getProgram() != p) {
                 throw new AssertionError("Actual canonical BCD namespace provenance differs");
