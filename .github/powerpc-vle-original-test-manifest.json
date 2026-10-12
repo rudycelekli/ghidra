@@ -1,0 +1,209 @@
+{
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/gui/FunctionBitPatternsXmlImportExportTest.java": {
+    "class": "ghidra.bitpatterns.gui.FunctionBitPatternsXmlImportExportTest",
+    "methods": [
+      "testRoundTrip"
+    ],
+    "sha256": "6851e5fbb7680636a4523c4780360168ae72f8d5d276944f9faf558a69194f5a"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/ByteSequenceLengthFilterTest.java": {
+    "class": "ghidra.bitpatterns.info.ByteSequenceLengthFilterTest",
+    "methods": [
+      "testNull",
+      "testException1",
+      "testException2",
+      "testPositiveIndex",
+      "testNegativeIndex",
+      "testMinimumLengthZero"
+    ],
+    "sha256": "cca0fe20e0c90de49f18f027862bf9ca3cce086f42b32ff15e25fff98f0354da"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/ByteSequenceRowObjectTest.java": {
+    "class": "ghidra.bitpatterns.info.ByteSequenceRowObjectTest",
+    "methods": [
+      "testFirstBytesSize",
+      "testFirstBytesContextRegisterFiltering",
+      "testFirstBytesLengthFiltering",
+      "testPreBytesSize",
+      "testPreBytesContextRegisterFiltering",
+      "testPreBytesLengthFiltering",
+      "testReturnBytesSize",
+      "testReturnBytesContextRegisterFiltering",
+      "testReturnBytesLengthFiltering",
+      "testBasicMerge",
+      "testNullMerge",
+      "testEmptyMerge",
+      "testFirstInstructions",
+      "testPreInstructions",
+      "testReturnInstructions",
+      "testContextRegisterFiltering"
+    ],
+    "sha256": "576b71c5801c916f22a349e53b3fae9e66c90c1591a44dd9b68764f14abd23db"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/ClosedPatternRowObjectTest.java": {
+    "class": "ghidra.bitpatterns.info.ClosedPatternRowObjectTest",
+    "methods": [
+      "testMiningFirstPatternsCharacters",
+      "testMiningFirstPatternsBinary"
+    ],
+    "sha256": "6e4b2c3fa35ed40a8f3f125e450e34c6d9f07ea0491cac017315f5cd272707a2"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/ContextRegisterExtentTest.java": {
+    "class": "ghidra.bitpatterns.info.ContextRegisterExtentTest",
+    "methods": [
+      "testEmptyExtent",
+      "testNullInputs",
+      "testRegistersAndValues"
+    ],
+    "sha256": "45926422a70ba669523b96ac127cc1c1945f1357be6a9acb5d5e2761d1023784"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/ContextRegisterFilterTest.java": {
+    "class": "ghidra.bitpatterns.info.ContextRegisterFilterTest",
+    "methods": [
+      "testEmptyFilter",
+      "testFilteringEmptyList",
+      "basicPassTest",
+      "basicFailTest"
+    ],
+    "sha256": "5af2749da1c4691c31f9fe1499fa08e91e0d7349ab187c3737c9a10b0b54eb51"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/ContextRegisterInfoTest.java": {
+    "class": "ghidra.bitpatterns.info.ContextRegisterInfoTest",
+    "methods": [
+      "testEquals"
+    ],
+    "sha256": "8265105b727d10dcd97234db4f5502c35dbd64f509066739455617ee21f36f9e"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/DataGatheringParamsTest.java": {
+    "class": "ghidra.bitpatterns.info.DataGatheringParamsTest",
+    "methods": [
+      "testNullString",
+      "testEmptyString",
+      "testLiteralNull",
+      "testEmptyRegName",
+      "testNameTrimming"
+    ],
+    "sha256": "0da7283c069eb42f1e8d5ef72a43e2f30ea38c43eefcf99479fc80bfc3ba71fe"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/FileBitPatternInfoReaderTest.java": {
+    "class": "ghidra.bitpatterns.info.FileBitPatternInfoReaderTest",
+    "methods": [
+      "testGetNumFiles",
+      "testGetNumFuncs",
+      "testReturnAddresses",
+      "testContextRegisterExtent",
+      "testContextRegisterFiltering"
+    ],
+    "sha256": "604e08de6cc1646f228dfc6b285db02128cc9acba8d6985f326ba8d030da49e2"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/InstructionSequenceTest.java": {
+    "class": "ghidra.bitpatterns.info.InstructionSequenceTest",
+    "methods": [
+      "basicTest",
+      "testFilteredFirstInstructions",
+      "testFilteredPreInstructions",
+      "testFilteredReturnInstructions"
+    ],
+    "sha256": "fff61461c55daeeca1381db1bf47272b7490bb1ec08a8ceab539c34ee3011266"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/PatternEvalutationStatsTest.java": {
+    "class": "ghidra.bitpatterns.info.PatternEvalutationStatsTest",
+    "methods": [
+      "basicTest"
+    ],
+    "sha256": "471731c66423b046b49b0207d93854fb1c9fff0b6c0901de3567d503c758bd9a"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/PercentageFilterTest.java": {
+    "class": "ghidra.bitpatterns.info.PercentageFilterTest",
+    "methods": [
+      "negativeTest",
+      "tooBigTest"
+    ],
+    "sha256": "5ee4b8e442176f2258ff85c406653d4a1905ce7276a1a59dbbe5a777b0892564"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/closedpatternmining/ClosedSequenceMinerTest.java": {
+    "class": "ghidra.closedpatternmining.ClosedSequenceMinerTest",
+    "methods": [
+      "test1",
+      "test2",
+      "test3",
+      "test4",
+      "test5",
+      "test6",
+      "test7",
+      "test8"
+    ],
+    "sha256": "a6a63c3241745ce7fdddc37122e0feb01c31df06e3c6c40b408eb5d7e5afc8b3"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/closedpatternmining/ProjectedDatabaseTest.java": {
+    "class": "ghidra.closedpatternmining.ProjectedDatabaseTest",
+    "methods": [
+      "projectEmptyStringTest",
+      "projectSingleCharTest",
+      "projectDoubleCharTest",
+      "projectTwiceTest1",
+      "projectTwiceTest2",
+      "projectEntireTest",
+      "projectNonOccuringCharTest",
+      "testLocallyFrequentItemsBasic",
+      "testLocallyFrequentItemsEmptyProjectedDatabase",
+      "testLocallyFrequentItemsDits",
+      "testLocallyFrequentItemsNoFrequentItems",
+      "noForwardExtensionItemsTest",
+      "testForwardExtensionItems",
+      "noBackwardExtensionItemsTest1",
+      "noBackwardExtensionItemsTest2",
+      "simpleBackwardExtensionItemTest1",
+      "simpleBackwardExtensionItemTest2",
+      "oneBackwardExtensionItemTest1",
+      "oneBackwardExtensionItemTest2",
+      "twoBackwardExtensionItemsTest1",
+      "threeBackwardExtensionItemsTest3"
+    ],
+    "sha256": "67de35a1ba4da8ef951639bc950c4ce06adc90f2a9d20926056bb428174accf3"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/closedpatternmining/SequenceDatabaseTest.java": {
+    "class": "ghidra.closedpatternmining.SequenceDatabaseTest",
+    "methods": [
+      "totalNumSeqsTest",
+      "moreThan75PercentTest",
+      "moreThan50PercentTest",
+      "noFrequentItemsTest"
+    ],
+    "sha256": "ba2f32a1696e748088827bfe99ed9ca46cb29fe33fd68d4ba36b605dcd28bff8"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/closedpatternmining/SequenceItemTest.java": {
+    "class": "ghidra.closedpatternmining.SequenceItemTest",
+    "methods": [
+      "emptySequenceTest",
+      "noDitsTest",
+      "ditsTest",
+      "outOfOrderTest",
+      "comparisonTests"
+    ],
+    "sha256": "172c55f903d98cd78bb37da94adf6679083e634e587e5f274823654dfe443658"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/closedpatternmining/SequenceTest.java": {
+    "class": "ghidra.closedpatternmining.SequenceTest",
+    "methods": [
+      "test",
+      "itemDoesntOccurTest",
+      "prefixTestOne",
+      "prefixTestTwo",
+      "prefixTestThree",
+      "prefixTestFour"
+    ],
+    "sha256": "0aa33e4cc56f33ad6a99a222cb7c1f40789b2cec3934cc33d58f073bb26ddae0"
+  },
+  "Ghidra/Features/BytePatterns/src/test/java/ghidra/util/bytesearch/DittedBitSequenceTest.java": {
+    "class": "ghidra.util.bytesearch.DittedBitSequenceTest",
+    "methods": [
+      "testDittedBitSequenceConstructor",
+      "testDittedBitSequenceConstructor_2",
+      "testGetNumUncertainBits",
+      "testGetLeastUpperBound",
+      "testGetNumInitialFixedBits"
+    ],
+    "sha256": "9aab0852787ec44c9ca1a85587c3e665f3990fd68f5eea68087b6da7e2695a3c"
+  }
+}

@@ -1,0 +1,35 @@
+name: Fork-only context-qualified VLE function native qualification
+on:
+  push:
+    branches: [validation/powerpc-vle-undefined-padding-native-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/powerpc-vle-native-gate.py /tmp/powerpc-vle-native-gate.py && cp .github/powerpc-vle-original-test-manifest.json /tmp/powerpc-vle-original-test-manifest.json
+      - run: git fetch origin 0ffe77039c5c20c222874270588ffa456d9af1cf && git checkout --detach 0ffe77039c5c20c222874270588ffa456d9af1cf
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Validate actual context prerequisites, VLE functions and original tests
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/powerpc-vle-native-evidence
+          HEAD_SHA: 0ffe77039c5c20c222874270588ffa456d9af1cf
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/powerpc-vle-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: powerpc-vle-native-qualification
+          path: ${{ runner.temp }}/powerpc-vle-native-evidence/
+          retention-days: 14
