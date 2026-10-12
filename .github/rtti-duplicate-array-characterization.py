@@ -50,7 +50,7 @@ try:
                             '-DhideDownloadProgress', '-DnoEclipse']) == 0
     assert run('prep', g + ['prepDev']) == 0
     assert run('actual-native-x86', g + [':Decompiler:buildNatives', ':x86:sleighCompile']) == 0
-    native = p / 'Ghidra/Features/Decompiler/os/linux_x86_64/decompile'
+    native = p / 'Ghidra/Features/Decompiler/build/os/linux_x86_64/decompile'
     assert native.is_file()
     r['built_native_sha256'] = hashlib.sha256(native.read_bytes()).hexdigest()
     assert run('actual-distribution-build', g + ['buildGhidra']) == 0
