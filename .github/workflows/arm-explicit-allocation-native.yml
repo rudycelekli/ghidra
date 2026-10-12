@@ -1,0 +1,36 @@
+name: Fork-only ARM explicit allocation native qualification
+on:
+  push:
+    branches: [validation/arm-explicit-allocation-native-clean-diagnostic-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v6
+      - run: |
+          cp .github/arm-explicit-allocation-native-gate.py /tmp/arm-explicit-allocation-native-gate.py
+          cp .github/arm-explicit-allocation-native-config.json /tmp/arm-explicit-allocation-native-config.json
+      - run: git fetch origin 006a069c0ebd944a0597b05da7b4025c464ee85c && git checkout --detach 006a069c0ebd944a0597b05da7b4025c464ee85c
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb bison flex binutils-dev
+      - name: Actual baseline and fixed allocation, overrides and complete regression controls
+        env:
+          HEAD_SHA: 006a069c0ebd944a0597b05da7b4025c464ee85c
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+          CONFIG_FILE: /tmp/arm-explicit-allocation-native-config.json
+        run: python /tmp/arm-explicit-allocation-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: arm-explicit-allocation-native
+          path: native-evidence/
+          retention-days: 14
