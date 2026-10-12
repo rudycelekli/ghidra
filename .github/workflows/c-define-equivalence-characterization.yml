@@ -1,0 +1,30 @@
+name: Fork-only C define archive equivalence characterization
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/c-define-equivalence-characterization.py /tmp/c-define-equivalence-characterization.py
+      - run: git fetch origin d3816de1cc9b98099e50a331cdb0e5714b0bc416 && git checkout --detach d3816de1cc9b98099e50a331cdb0e5714b0bc416
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Characterize actual C define archive reuse
+        env:
+          HEAD_SHA: d3816de1cc9b98099e50a331cdb0e5714b0bc416
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/c-define-equivalence-characterization.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: c-define-equivalence-characterization
+          path: native-evidence/
+          retention-days: 14
