@@ -1,0 +1,31 @@
+name: Fork-only C macro imported value native qualification
+on: [push]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/c-macro-import-values-native-gate.py /tmp/c-macro-import-values-native-gate.py
+      - run: git fetch origin c1c8098acad8391f0228b71abb88731422c4975c && git checkout --detach c1c8098acad8391f0228b71abb88731422c4975c
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline fixed and full build
+        env:
+          KIND: c-macro-import-values
+          HEAD_SHA: c1c8098acad8391f0228b71abb88731422c4975c
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/java/ghidra/app/util/cparser/CPP/DefineTable.java", "test_task": ":Base:test", "test_classes": ["ghidra.app.util.cparser.OctalDefineEquateTest", "ghidra.app.util.cparser.PreProcessorTest", "ghidra.app.util.cparser.DefineArchiveEquivalenceTest"], "class_counts": {"ghidra.app.util.cparser.OctalDefineEquateTest": 12, "ghidra.app.util.cparser.PreProcessorTest": 20, "ghidra.app.util.cparser.DefineArchiveEquivalenceTest": 5}, "result_dir": "Ghidra/Features/Base/build/test-results/test", "total": 37, "failures": [["ghidra.app.util.cparser.OctalDefineEquateTest", "testOctalOrExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testOctalShiftExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testOctalAdditionExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testExpandedOctalExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testNegativeOctalLiteral"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testNegativeOctalExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testOctalSuffixExpressions"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testLongWidthOctalExpression"], ["ghidra.app.util.cparser.DefineArchiveEquivalenceTest", "testDifferentArchiveValueIsNotReused"], ["ghidra.app.util.cparser.DefineArchiveEquivalenceTest", "testDifferentArchiveWidthIsNotReused"], ["ghidra.app.util.cparser.DefineArchiveEquivalenceTest", "testOctalExpressionDoesNotReusePriorDecimalArchive"]], "expected_cases": [["ghidra.app.util.cparser.OctalDefineEquateTest", "testOctalOrExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testOctalShiftExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testOctalAdditionExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testExpandedOctalExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testSingleOctalLiteralControl"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testDecimalAndHexExpressionControl"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testNegativeOctalLiteral"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testNegativeOctalExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testOctalSuffixExpressions"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testLongWidthOctalExpression"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testHexAndDecimalTokenBoundaryControl"], ["ghidra.app.util.cparser.OctalDefineEquateTest", "testQuotedAndIdentifierTokenControls"], ["ghidra.app.util.cparser.PreProcessorTest", "testHeaderParsed"], ["ghidra.app.util.cparser.PreProcessorTest", "testCommenting"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefines"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesArgValue"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesArgEmpty"], ["ghidra.app.util.cparser.PreProcessorTest", "testQuotedQuote"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesArgDef"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesArgIsDefValue"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesArgIsDefEmpty"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesArgIsDefDef"], ["ghidra.app.util.cparser.PreProcessorTest", "testFileDefinesValue"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesFileEmpty"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesFileDef"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesFileIsDefValue"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesFileIsDefEmpty"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesFileIsDefDef"], ["ghidra.app.util.cparser.PreProcessorTest", "testMultipleInclude"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinedInclude"], ["ghidra.app.util.cparser.PreProcessorTest", "testVarags"], ["ghidra.app.util.cparser.PreProcessorTest", "testDefinesEnumLength"], ["ghidra.app.util.cparser.DefineArchiveEquivalenceTest", "testDifferentArchiveValueIsNotReused"], ["ghidra.app.util.cparser.DefineArchiveEquivalenceTest", "testDifferentArchiveWidthIsNotReused"], ["ghidra.app.util.cparser.DefineArchiveEquivalenceTest", "testEquivalentArchiveControl"], ["ghidra.app.util.cparser.DefineArchiveEquivalenceTest", "testUnrelatedArchiveNameControl"], ["ghidra.app.util.cparser.DefineArchiveEquivalenceTest", "testOctalExpressionDoesNotReusePriorDecimalArchive"]]}'
+        run: python /tmp/c-macro-import-values-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: c-macro-import-values-native
+          path: native-evidence/
+          retention-days: 14
