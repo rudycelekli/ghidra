@@ -1,0 +1,35 @@
+name: Fork-only VT accepted cache public producer characterization
+on:
+  push:
+    branches: [validation/vt-association-cache-characterization-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/vt-association-cache-native-gate.py /tmp/vt-association-cache-native-gate.py
+      - run: git fetch origin 21916c679fda5a544c63bf9df8448b2d786f003d && git checkout --detach 21916c679fda5a544c63bf9df8448b2d786f003d
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install virtual display
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Actual public DB cache regressions and unchanged original tests
+        env:
+          HEAD_SHA: 21916c679fda5a544c63bf9df8448b2d786f003d
+          BASE_SHA: 918d44ebc2962a53d23eeee52b8f44c7816e7815
+        run: python /tmp/vt-association-cache-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: vt-association-cache-characterization
+          path: native-evidence/
+          retention-days: 14
