@@ -1,0 +1,33 @@
+name: C enum constant array bounds native qualification
+on:
+  push:
+    branches: [validation/c-enum-array-bound-native-20261012]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/enum-array-bound-native-gate.py /tmp/enum-array-bound-native-gate.py
+      - run: git fetch origin f8e35018de0ebafbb66b2d1d90474060364b42f4 && git checkout --detach f8e35018de0ebafbb66b2d1d90474060364b42f4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Native baseline, fixed regressions and full build
+        env:
+          KIND: enum-array-bound
+          HEAD_SHA: f8e35018de0ebafbb66b2d1d90474060364b42f4
+          CONFIG: '{"language": "java", "production": "Ghidra/Features/Base/src/main/javacc/ghidra/app/util/cparser/C/C.jj", "test_task": ":Base:test", "test_classes": ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "ghidra.app.util.cparser.CParserTest"], "class_counts": {"ghidra.app.util.cparser.EnumConstantArrayBoundTest": 17, "ghidra.app.util.cparser.CParserTest": 10}, "result_dir": "Ghidra/Features/Base/build/test-results/test", "total": 27, "failures": [["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testAnonymousImplicitEnumBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testNamedExplicitEnumBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testDerivedEnumBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testSameEnumAliasBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testPriorEnumAliasBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testFunctionLocalEnumDoesNotShadowGlobalBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testNestedBlockRestoresOuterEnumerator"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testParseFailureRestoresGlobalEnumerator"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testMemberIdentifierDoesNotShadowEnumerator"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testPrototypeEnumeratorDoesNotLeak"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testDefinitionParameterEnumeratorIsVisibleInBody"]], "expected_cases": [["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testAnonymousImplicitEnumBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testNamedExplicitEnumBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testLiteralArrayBoundControl"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testFlexibleArrayControl"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testDerivedEnumBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testSameEnumAliasBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testPriorEnumAliasBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testFunctionLocalEnumDoesNotShadowGlobalBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testNestedBlockRestoresOuterEnumerator"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testParseFailureRestoresGlobalEnumerator"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testUnknownIdentifierRetainsExistingZeroBound"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testParameterIdentifierShadowsEnumeratorControl"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testLocalIdentifierShadowsEnumeratorControl"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testMemberIdentifierDoesNotShadowEnumerator"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testPrototypeEnumeratorDoesNotLeak"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testDefinitionParameterEnumeratorIsVisibleInBody"], ["ghidra.app.util.cparser.EnumConstantArrayBoundTest", "testOldStyleParameterShadowsEnumeratorControl"], ["ghidra.app.util.cparser.CParserTest", "testSimple"], ["ghidra.app.util.cparser.CParserTest", "testReplacement1"], ["ghidra.app.util.cparser.CParserTest", "testReplacement2"], ["ghidra.app.util.cparser.CParserTest", "testLongInt"], ["ghidra.app.util.cparser.CParserTest", "testLongLong"], ["ghidra.app.util.cparser.CParserTest", "testTypedef"], ["ghidra.app.util.cparser.CParserTest", "testWcharT"], ["ghidra.app.util.cparser.CParserTest", "testParseDataType_NoSubArchive"], ["ghidra.app.util.cparser.CParserTest", "testParseDataType_WithSubArchive"], ["ghidra.app.util.cparser.CParserTest", "testHeaderParsing"]]}'
+        run: python /tmp/enum-array-bound-native-gate.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: next-native-enum-array-bound
+          path: native-evidence/
+          retention-days: 14
