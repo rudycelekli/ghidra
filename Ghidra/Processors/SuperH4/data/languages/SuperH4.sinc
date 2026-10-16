@@ -1325,18 +1325,41 @@ N_0txx: r0",@"^N_0  is r0 & N_0 { tmp:4 = N_0; export tmp; }
 	<skip>
 }
 
+# In little-endian SH-4 double-width transfers the lower-addressed word is
+# the high word of the floating-point register pair when PR is clear.
+# The little-endian register layout has opposite word orders for DR and XD.
+macro fmovLoadDouble(dest, addr, otherBank) {
+	local value:8 = *:8 addr;
+@if ENDIAN == "little"
+	if ($(FPSCR_PR) != otherBank) goto <ordered>;
+	value = (value << 32) | (value >> 32);
+	<ordered>
+@endif
+	dest = value;
+}
+
+macro fmovStoreDouble(src, addr, otherBank) {
+	local value:8 = src;
+@if ENDIAN == "little"
+	if ($(FPSCR_PR) != otherBank) goto <ordered>;
+	value = (value << 32) | (value >> 32);
+	<ordered>
+@endif
+	*:8 addr = value;
+}
+
 # Floating-Point Transfer #5-6
 # pattern 1111nnn0mmmm1000
 # text    fmov @<REG_M>,<F_REG_N>
 # arch    arch_sh2e_up
 :fmov.s M_0t_at1,FRN_0      is
-      OP_0=0xf &  XDRN & FRN_0 & M_0t_at1 &  OP_1=0x8 {
+      OP_0=0xf & OP_6 & XDRN & FRN_0 & M_0t_at1 &  OP_1=0x8 {
 
 	if (!( $(FPSCR_SZ) == 0 )) goto <doubleWidth>;
 	FRN_0 = *:4 M_0t_at1;
 	goto <skip>;
 	<doubleWidth>
-	XDRN = *:8 M_0t_at1;
+	fmovLoadDouble(XDRN, M_0t_at1, OP_6:1);
 	<skip>
 }
 
@@ -1349,12 +1372,12 @@ N_0txx: r0",@"^N_0  is r0 & N_0 { tmp:4 = N_0; export tmp; }
 #
 :fmov.s FRM_0,N_0t_at1      is
 
-      OP_0=0xf &  N_0t_at1 &  FRM_0 & XDRM &  OP_1=0xa {
+      OP_0=0xf & OP_10 & N_0t_at1 &  FRM_0 & XDRM &  OP_1=0xa {
 	if (!( $(FPSCR_SZ) == 0 )) goto <doubleWidth>;
 	*:4 N_0t_at1 = FRM_0;
 	goto <skip>;
 	<doubleWidth>
-	*:8 N_0t_at1 = XDRM;
+	fmovStoreDouble(XDRM, N_0t_at1, OP_10:1);
 	<skip>
 }
 
@@ -1363,14 +1386,14 @@ N_0txx: r0",@"^N_0  is r0 & N_0 { tmp:4 = N_0; export tmp; }
 # text    fmov @<REG_M>+,<F_REG_N>
 # arch    arch_sh2e_up
 :fmov.s M_0t_at,FRN_0       is
-      OP_0=0xf &  XDRN & FRN_0 &  M_0t_at &  OP_1=0x9 {
+      OP_0=0xf & OP_6 & XDRN & FRN_0 &  M_0t_at &  OP_1=0x9 {
 
 	if (!( $(FPSCR_SZ) == 0 )) goto <doubleWidth>;
 	FRN_0 = *:4 M_0t_at;
 	M_0t_at = M_0t_at + 4;
 	goto <skip>;
 	<doubleWidth>
-	XDRN = *:8 M_0t_at;
+	fmovLoadDouble(XDRN, M_0t_at, OP_6:1);
 	M_0t_at = M_0t_at + 8;
 	<skip>
 }
@@ -1380,7 +1403,7 @@ N_0txx: r0",@"^N_0  is r0 & N_0 { tmp:4 = N_0; export tmp; }
 # text    fmov <F_REG_M>,@-<REG_N>
 # arch    arch_sh2e_up
 :fmov.s FRM_0,N_0t_at_neg   is
-      OP_0=0xf &  N_0t_at_neg &  XDRM & FRM_0 &  OP_1=0xb {
+      OP_0=0xf & OP_10 & N_0t_at_neg &  XDRM & FRM_0 &  OP_1=0xb {
 
 	if (!( $(FPSCR_SZ) == 0 )) goto <doubleWidth>;
 	N_0t_at_neg = N_0t_at_neg - 4;
@@ -1388,7 +1411,7 @@ N_0txx: r0",@"^N_0  is r0 & N_0 { tmp:4 = N_0; export tmp; }
 	goto <skip>;
 	<doubleWidth>
 	N_0t_at_neg = N_0t_at_neg - 8;
-	*:8 N_0t_at_neg = XDRM;
+	fmovStoreDouble(XDRM, N_0t_at_neg, OP_10:1);
 	<skip>
 }
 
@@ -1397,13 +1420,14 @@ N_0txx: r0",@"^N_0  is r0 & N_0 { tmp:4 = N_0; export tmp; }
 # text    fmov @(R0,<REG_M>),<F_REG_N>
 # arch    arch_sh2e_up
 :fmov.s M_0t_at_with_r0,FRN_0  is
-      OP_0=0xf &  XDRN &  FRN_0 & M_0t_at_with_r0 &  OP_1=0x6 {
+      OP_0=0xf & OP_6 & XDRN &  FRN_0 & M_0t_at_with_r0 &  OP_1=0x6 {
 
 	if (!( $(FPSCR_SZ) == 0 )) goto <doubleWidth>;
 	FRN_0 = *:4 (r0 + M_0t_at_with_r0);
 	goto <skip>;
 	<doubleWidth>
-	XDRN = *:8 (r0 + M_0t_at_with_r0);
+	local addr:4 = r0 + M_0t_at_with_r0;
+	fmovLoadDouble(XDRN, addr, OP_6:1);
 	<skip>
 }
 
@@ -1412,13 +1436,14 @@ N_0txx: r0",@"^N_0  is r0 & N_0 { tmp:4 = N_0; export tmp; }
 # text    fmov @(R0,<REG_M>),<F_REG_N>
 # arch    arch_sh2e_up
 :fmov FRM_0,N_0t_at_with_r0 is
-      OP_0=0xf  &  N_0t_at_with_r0 &  XDRM & FRM_0 &  OP_1=0x7 {
+      OP_0=0xf & OP_10 & N_0t_at_with_r0 &  XDRM & FRM_0 &  OP_1=0x7 {
 
 	if (!( $(FPSCR_SZ) == 0 )) goto <doubleWidth>;
 	*:4 (r0 + N_0t_at_with_r0) = FRM_0;
 	goto <skip>;
 	<doubleWidth>
-	*:8 (r0 + N_0t_at_with_r0) = XDRM;
+	local addr:4 = r0 + N_0t_at_with_r0;
+	fmovStoreDouble(XDRM, addr, OP_10:1);
 	<skip>
 }
 
