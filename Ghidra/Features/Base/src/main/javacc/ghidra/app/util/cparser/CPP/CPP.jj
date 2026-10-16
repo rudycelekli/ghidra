@@ -337,7 +337,7 @@ public class PreProcessor {
 						}
 						thisVal = replVal.image;
 						fixupNumericValue(replVal);
-						thisFP = getDoubleValue(replVal.image);
+						thisFP = getComparisonValue(replVal);
 				}
 			}
 			catch (NumberFormatException e) {
@@ -375,7 +375,7 @@ public class PreProcessor {
 						}
 						thatVal = replVal.image;
 						fixupNumericValue(replVal);
-						thatFP = getDoubleValue(replVal.image);
+						thatFP = getComparisonValue(replVal);
 				}
 			}
 			catch (NumberFormatException e) {
@@ -1245,6 +1245,13 @@ public class PreProcessor {
 			}
 		}
 		return PreProcessor.ITEM;
+	}
+
+	private Double getComparisonValue(PPToken token) {
+		if (token.image.matches("[a-zA-Z_][a-zA-Z_0-9]*") && !isDef(token)) {
+			return 0.0;
+		}
+		return getDoubleValue(token.image);
 	}
 
 	public Double getDoubleValue(String val) {
