@@ -2180,7 +2180,7 @@ void StructDeclaration(Composite comp, CompositeHandler compositeHandler) : {
         ";" 
     )
     {
-        if (dt != null) { // dt was not used up
+        if (dt != null && !(dt.getDataType() instanceof Enum)) { // dt was not used up
             if (dt.getDataType().getLength() > 0) {
                 comp.add(dt.getDataType(), "", null);
             } else {
