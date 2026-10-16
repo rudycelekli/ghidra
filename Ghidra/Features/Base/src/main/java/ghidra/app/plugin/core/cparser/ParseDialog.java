@@ -609,6 +609,7 @@ class ParseDialog extends ReusableDialogComponentProvider {
 
 	private void clear() {
 		pathPanel.clear();
+		includePathPanel.clear();
 		parseOptionsField.setText("");
 		ComboBoxItem item = comboBox.getSelectedItem();
 		item.isChanged = true;
