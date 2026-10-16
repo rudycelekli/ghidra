@@ -361,8 +361,8 @@ public class PreProcessor {
 						break;
 					case PreProcessor.CHAR_NUMERIC:
 					case PreProcessor.CHAR_LITERAL:
-						char ch = getCharacterValue(this.image);
-						thisFP = new Double((double)ch);
+						char ch = getCharacterValue(that.image);
+						thatFP = new Double((double)ch);
                         break;
 					default:
 						PPToken replVal = (PPToken) getDef(that); // not a PPToken
