@@ -434,11 +434,24 @@ public class PreProcessor {
 				case TIMES:
 					result = tvalue.multiply(vvalue);
 					break;
+				case DIVIDE:
+					if (vvalue.signum() != 0) {
+						result = tvalue.divide(vvalue);
+					}
+					break;
+				case MOD:
+					if (vvalue.signum() != 0) {
+						result = tvalue.remainder(vvalue);
+					}
+					break;
 				case AND:
 					result = tvalue.and(vvalue);
 					break;
 				case OR:
 					result = tvalue.or(vvalue);
+					break;
+				case XOR:
+					result = tvalue.xor(vvalue);
 					break;
 				case RSH:
 					result = tvalue.shiftRight(vvalue.intValue());
