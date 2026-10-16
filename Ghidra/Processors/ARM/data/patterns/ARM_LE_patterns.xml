@@ -76,6 +76,13 @@
     </postpatterns>
   </patternpairs>
   
+  <pattern> <!-- Old APCS frame: mov ip,sp; stmdb sp!,{...,fp,ip,lr,pc} -->
+      <data> 0x0dc0a0e1 ........ 11011... 0x2de9 </data>
+      <align mark="0" bits="2"/>
+      <setcontext name="TMode" value="0"/>
+      <funcstart validcode="3" contiguous="true"/>
+  </pattern>
+
   <pattern> <!-- 32 bit ARM -->
       <data> 0x..d.4de2                             ........ 0100.... 00101101 11101001 </data> <!-- sub sp,sp ; stmdb sp!,{r0+, lr !sp !pc !r12} -->
       <align mark="0" bits="2"/>
