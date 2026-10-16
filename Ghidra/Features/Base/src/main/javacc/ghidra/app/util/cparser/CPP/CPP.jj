@@ -2403,7 +2403,7 @@ PPToken LogNegation() :
 
 PPToken ValueExpression() :
 {Token t;Token v;PPToken pt;PPToken tv=null;
- Token u=null;Vector dargs = new Vector(); }
+ Token u=null;Vector dargs = new Vector(); boolean functionInvocation = false; }
 {
 
     (
@@ -2424,10 +2424,11 @@ PPToken ValueExpression() :
         return pt;
     }
     |
-    (t=<ITEM>) [ LOOKAHEAD(4) <BEGITEM> ((tv=Expression()) {dargs.add(tv);})+ <ENDITEM> ] {
+    (t=<ITEM>) [ LOOKAHEAD(2) <BEGITEM> { functionInvocation = true; }
+        ((tv=Expression()) {dargs.add(tv);})* <ENDITEM> ] {
         if (verboseLevel()==7) print(t.image);
         pt=new PPToken(t);
-        if (dargs.size() > 0) {
+        if (functionInvocation) {
             pt.image += "(";
             Enumeration<PPToken> denum = dargs.elements();
             int index = 0;
