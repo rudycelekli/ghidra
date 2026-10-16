@@ -1131,6 +1131,8 @@ TOKEN :
             (
                 [ "n", "t", "b", "r", "f", "\\", "\'", "\"" ]
                 |
+                "x" ([ "0"-"9", "a"-"f", "A"-"F" ])+
+                |
                 [ "0"-"7" ] ( [ "0"-"7" ] )?
                 |
                 [ "0"-"3" ] [ "0"-"7" ] [ "0"-"7" ]
@@ -3159,7 +3161,11 @@ Object Constant() : {
         |
         t = <CHARACTER_LITERAL>
         {
-            if (t.image.length() == 1) {
+            String character = t.image.startsWith("L") ? t.image.substring(1) : t.image;
+            if (character.matches("'\\\\x[0-9a-fA-F]+'")) {
+              obj = Long.valueOf(
+                new BigInteger(character.substring(3, character.length() - 1), 16).longValue());
+            } else if (t.image.length() == 1) {
               obj = new Character(t.image.charAt(0));
             } else if (t.image.length() == 4) {
               long cval = ((long)t.image.charAt(0) << 24) + ((long)t.image.charAt(1) << 16) + ((long)t.image.charAt(2) << 8) + ((long) t.image.charAt(3));
