@@ -2389,14 +2389,21 @@ PPToken UnaryExpression() : {
 }
 
 PPToken LogNegation() :
-{Token t; PPToken pt=null; boolean negate=false;}
+{Token t; PPToken pt=null; boolean negate=false; boolean hasNegation=false;}
 {
     (t=<NOT>{
-         negate = true;
+         hasNegation = true;
+         negate = !negate;
          if (verboseLevel()==7) print(t.image);
      })*
     pt=ValueExpression(){
-        if (negate==true) pt.setContra(true);
+        if (hasNegation) {
+            boolean truth = negate ? !pt.getTruth() : pt.getTruth();
+            pt = new PPToken(pt);
+            pt.image = truth ? "1" : "0";
+            pt.kind = NUMERIC;
+            pt.setTruth(truth);
+        }
     }
     {return pt;}
 }
