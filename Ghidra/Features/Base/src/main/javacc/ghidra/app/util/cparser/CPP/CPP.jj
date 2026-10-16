@@ -307,6 +307,8 @@ public class PreProcessor {
 		}
 
 		int compareTo(PPToken that) {
+			BigInteger thisInteger = getIntegerValue(this.image);
+			BigInteger thatInteger = getIntegerValue(that.image);
 			Double thisFP = new Double(0.0);
 			Double thatFP = new Double(0.0);
 			String thisVal = null;
@@ -338,6 +340,7 @@ public class PreProcessor {
 						thisVal = replVal.image;
 						fixupNumericValue(replVal);
 						thisFP = getDoubleValue(replVal.image);
+						thisInteger = getIntegerValue(replVal.image);
 				}
 			}
 			catch (NumberFormatException e) {
@@ -376,6 +379,7 @@ public class PreProcessor {
 						thatVal = replVal.image;
 						fixupNumericValue(replVal);
 						thatFP = getDoubleValue(replVal.image);
+						thatInteger = getIntegerValue(replVal.image);
 				}
 			}
 			catch (NumberFormatException e) {
@@ -386,6 +390,9 @@ public class PreProcessor {
 				// addParseMessage(null, "Numeric Conversion Error in " +
 				// curFileStackTop() + " line " + that.beginLine +
 				// " : "+e.getMessage());
+			}
+			if (thisInteger != null && thatInteger != null) {
+				return thisInteger.compareTo(thatInteger);
 			}
 			if (this.image.equals(that.image)) {
 				return 0;
@@ -1255,6 +1262,15 @@ public class PreProcessor {
 			value = getLongValue(val).doubleValue();
 		}
 		return value;
+	}
+
+	private BigInteger getIntegerValue(String str) {
+		try {
+			return getLongValue(str);
+		}
+		catch (NumberFormatException e) {
+			return null;
+		}
 	}
 
 	private BigInteger getLongValue(String str) throws NumberFormatException {
