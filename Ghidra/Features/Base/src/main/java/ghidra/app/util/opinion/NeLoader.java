@@ -32,6 +32,8 @@ import ghidra.program.database.function.OverlappingFunctionException;
 import ghidra.program.database.mem.FileBytes;
 import ghidra.program.model.address.*;
 import ghidra.program.model.data.ByteDataType;
+import ghidra.program.model.data.CategoryPath;
+import ghidra.program.model.data.EnumDataType;
 import ghidra.program.model.data.StringDataType;
 import ghidra.program.model.lang.Register;
 import ghidra.program.model.listing.*;
@@ -56,6 +58,8 @@ public class NeLoader extends AbstractOrdinalSupportLoader {
 	private static final int SEGMENT_START = 0x1000;
 
 	private ArrayList<Address> entryPointList = new ArrayList<>();
+	private Map<Integer, Integer> constantEntries = new LinkedHashMap<>();
+	private Set<Integer> namedConstants = new HashSet<>();
 	private Comparator<String> comparator = new CallNameComparator();
 
 	public NeLoader() {
@@ -151,13 +155,19 @@ public class NeLoader extends AbstractOrdinalSupportLoader {
 			return;
 		}
 		monitor.setMessage("Processing non-resident name table...");
-		processNonResidentNameTable(nrnt, symbolTable);
+		processNonResidentNameTable(nrnt, prog);
 
 		if (monitor.isCancelled()) {
 			return;
 		}
 		monitor.setMessage("Processing resident name table...");
-		processResidentNameTable(rnt, symbolTable);
+		processResidentNameTable(rnt, prog);
+		for (Map.Entry<Integer, Integer> constant : constantEntries.entrySet()) {
+			if (!namedConstants.contains(constant.getKey())) {
+				createConstant(prog, SymbolUtilities.ORDINAL_PREFIX + constant.getKey(),
+					constant.getValue());
+			}
+		}
 
 		if (monitor.isCancelled()) {
 			return;
@@ -576,8 +586,9 @@ public class NeLoader extends AbstractOrdinalSupportLoader {
 					seg = st.getSegments()[segmentIndex].getSegmentID();
 				}
 				else if (bundle.isConstant()) {
-					//todo: how to handle constants...?
-					log.appendMsg("NE - constant entry point...");
+					constantEntries.put(entryPointList.size(), Short.toUnsignedInt(pt.getOffset()));
+					entryPointList.add(null);
+					continue;
 				}
 				else {
 					seg = st.getSegments()[bundle.getType() - 1].getSegmentID();
@@ -591,12 +602,12 @@ public class NeLoader extends AbstractOrdinalSupportLoader {
 		}
 	}
 
-	private void processNonResidentNameTable(NonResidentNameTable nrnt, SymbolTable symbolTable) {
-		createSymbols(nrnt.getNames(), symbolTable);
+	private void processNonResidentNameTable(NonResidentNameTable nrnt, Program program) {
+		createSymbols(nrnt.getNames(), program);
 	}
 
-	private void processResidentNameTable(ResidentNameTable rnt, SymbolTable symbolTable) {
-		createSymbols(rnt.getNames(), symbolTable);
+	private void processResidentNameTable(ResidentNameTable rnt, Program program) {
+		createSymbols(rnt.getNames(), program);
 	}
 
 	private SegmentedAddress getImportSymbolByName(SymbolTable symbolTable, String modname,
@@ -638,6 +649,13 @@ public class NeLoader extends AbstractOrdinalSupportLoader {
 
 				if (reloc.isInternalRef()) {
 					if (reloc.getTargetSegment() == SegmentRelocation.MOVEABLE) {
+						int ordinal = Short.toUnsignedInt(reloc.getTargetOffset());
+						Integer constant = constantEntries.get(ordinal);
+						if (constant != null) {
+							processConstantRelocation(reloc, constant, ordinal, segment, memory,
+								space, relocTable, log, monitor);
+							continue;
+						}
 						relocAddr = (SegmentedAddress) entryPointList.get(reloc.getTargetOffset());
 					}
 					else {
@@ -693,6 +711,95 @@ public class NeLoader extends AbstractOrdinalSupportLoader {
 				}
 				while (true);
 			}
+		}
+	}
+
+	private void createConstant(Program program, String name, int value) {
+		name = SymbolUtilities.replaceInvalidChars(name, true);
+		EnumDataType constant = new EnumDataType(new CategoryPath("/NE/defines"), "const_" + name, 2);
+		constant.add(name, value);
+		program.getDataTypeManager().addDataType(constant, null);
+	}
+
+	private void processConstantRelocation(SegmentRelocation reloc, int value, int ordinal,
+			int segment, Memory memory, SegmentedAddressSpace space, RelocationTable relocTable,
+			MessageLog log, TaskMonitor monitor) {
+		int type = reloc.getType();
+		int width;
+		switch (type) {
+			case SegmentRelocation.TYPE_LO_BYTE:
+				width = 1;
+				break;
+			case SegmentRelocation.TYPE_OFFSET:
+				width = 2;
+				break;
+			default:
+				Address address = space.getAddress(segment, Short.toUnsignedInt(reloc.getOffset()));
+				log.appendMsg("Unsupported NE constant relocation type " + type + " at " + address);
+				relocTable.add(address, Status.UNSUPPORTED, type, reloc.getValues(), 0,
+					SymbolUtilities.ORDINAL_PREFIX + ordinal);
+				return;
+		}
+		int offset = Short.toUnsignedInt(reloc.getOffset());
+		List<Address> targets = new ArrayList<>();
+		Set<Integer> visited = new HashSet<>();
+		Address address = space.getAddress(segment, offset);
+		try {
+			while (true) {
+				if (monitor.isCancelled()) {
+					return;
+				}
+				address = space.getAddress(segment, offset);
+				int required = reloc.isAdditive() ? width : Math.max(width, 2);
+				MemoryBlock block = memory.getBlock(address);
+				if (!visited.add(offset) || offset + required > 0x10000 || block == null ||
+					block.getEnd().subtract(address) + 1 < required) {
+					log.appendMsg("Invalid NE constant relocation chain at " + address);
+					relocTable.add(address, Status.FAILURE, type, reloc.getValues(), width,
+						SymbolUtilities.ORDINAL_PREFIX + ordinal);
+					return;
+				}
+				targets.add(address);
+				if (reloc.isAdditive()) {
+					break;
+				}
+				offset = Short.toUnsignedInt(memory.getShort(address));
+				if (offset == 0xffff) {
+					break;
+				}
+			}
+			for (Address target : targets) {
+				if (monitor.isCancelled()) {
+					return;
+				}
+				long result = value;
+				if (reloc.isAdditive()) {
+					switch (width) {
+						case 1:
+							result += Byte.toUnsignedInt(memory.getByte(target));
+							break;
+						case 2:
+							result += Short.toUnsignedInt(memory.getShort(target));
+							break;
+					}
+				}
+				switch (width) {
+					case 1:
+						memory.setByte(target, (byte) result);
+						break;
+					case 2:
+						memory.setShort(target, (short) result);
+						break;
+				}
+				relocTable.add(target, Status.APPLIED, type, reloc.getValues(), width,
+					SymbolUtilities.ORDINAL_PREFIX + ordinal);
+			}
+		}
+		catch (MemoryAccessException e) {
+			log.appendMsg("Cannot apply NE constant relocation at " + address);
+			log.appendException(e);
+			relocTable.add(address, Status.FAILURE, type, reloc.getValues(), width,
+				SymbolUtilities.ORDINAL_PREFIX + ordinal);
 		}
 	}
 
@@ -769,6 +876,8 @@ public class NeLoader extends AbstractOrdinalSupportLoader {
 
 	private void initVars() {
 		entryPointList.clear();
+		constantEntries.clear();
+		namedConstants.clear();
 		entryPointList.add(null); //add a null, since ordinals start at 1, not 0...
 	}
 
@@ -801,10 +910,17 @@ public class NeLoader extends AbstractOrdinalSupportLoader {
 	}
 
 	private void createSymbols(LengthStringOrdinalSet[] lengthStringOrdinalSets,
-			SymbolTable symbolTable) {
+			Program program) {
+		SymbolTable symbolTable = program.getSymbolTable();
 		for (LengthStringOrdinalSet lengthStringOrdinalSet : lengthStringOrdinalSets) {
 			int ordinal = Short.toUnsignedInt(lengthStringOrdinalSet.getOrdinal());
 			if (ordinal >= entryPointList.size()) {
+				continue;
+			}
+			Integer constant = constantEntries.get(ordinal);
+			if (constant != null) {
+				createConstant(program, lengthStringOrdinalSet.getString(), constant);
+				namedConstants.add(ordinal);
 				continue;
 			}
 			Address addr = entryPointList.get(ordinal);
