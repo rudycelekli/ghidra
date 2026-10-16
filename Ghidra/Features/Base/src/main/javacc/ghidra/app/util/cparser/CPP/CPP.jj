@@ -1259,7 +1259,7 @@ public class PreProcessor {
 
 	private BigInteger getLongValue(String str) throws NumberFormatException {
 		try {
-			if (str.endsWith("L") || str.endsWith("l") || str.endsWith("U")) {
+			if (str.endsWith("L") || str.endsWith("l") || str.endsWith("U") || str.endsWith("u")) {
 				str = str.substring(0, str.length() - 1);
 				return getLongValue(str);
 			}
@@ -1271,6 +1271,10 @@ public class PreProcessor {
 			if (str.startsWith("0x") || str.startsWith("0X")) {
 				return new BigInteger(str.substring(2), 16);
 			}
+			if (str.length() > 1 && str.startsWith("0")) {
+				return new BigInteger(str.substring(1), 8);
+			}
+
 			return new BigInteger(str);
 		} catch (NumberFormatException exc) {
 		}
