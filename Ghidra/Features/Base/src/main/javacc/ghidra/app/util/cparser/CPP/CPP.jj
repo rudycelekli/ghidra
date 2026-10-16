@@ -713,6 +713,9 @@ public class PreProcessor {
 		File incFile = null;
 		FileInputStream fis = null;
 		String srcPath = null;
+		if (!fileStack.empty()) {
+			srcPath = new File(fileStack.peek()).getAbsoluteFile().getParent() + File.separator;
+		}
 		try {
 			if (srcPath == null) {
 				srcPath = "." + File.separator;
