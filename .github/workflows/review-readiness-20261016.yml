@@ -18,6 +18,17 @@ jobs:
             revision: 3320ccb9f8120514832056a2956b63f7978d6d4c
             task: ':SoftwareModeling:test'
             test: ghidra.program.model.listing.VariableUtilitiesTest
+            expected_tests: 7
+          - pr: '9773'
+            revision: baeacb5b425599a2270a515c4452c2f2b4ffbc92
+            task: ':SoftwareModeling:test'
+            test: ghidra.pcode.floatformat.FloatFormatTest
+            expected_tests: 58
+          - pr: '9826'
+            revision: de3fb8efc06105ceac5498305cb4250c2e27fec8
+            task: ':Base:test'
+            test: ghidra.app.util.viewer.listingpanel.ProgramBigListingModelOpenDataTest
+            expected_tests: 0
     steps:
       - uses: actions/checkout@v6
         with:
@@ -31,19 +42,23 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
+          cache: gradle
       - name: Install headless display support
         run: sudo apt-get update && sudo apt-get install -y xvfb xauth
       - name: Fetch project dependencies
-        run: ./gradlew -I gradle/support/fetchDependencies.gradle -DhideDownloadProgress -DnoEclipse --no-daemon
+        run: ./gradlew -I gradle/support/fetchDependencies.gradle -DhideDownloadProgress -DnoEclipse --no-daemon --max-workers=2
+      - name: Prepare development environment
+        run: ./gradlew prepDev --no-daemon --max-workers=2
       - name: Verify regressions against previous PR implementation
+        if: matrix.pr == '9790'
         run: |
           git fetch origin ff200d2d6aae7e7f5a2b68a3883bf7e3375bb9f4
           git checkout ff200d2d6aae7e7f5a2b68a3883bf7e3375bb9f4 -- Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableImpl.java Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableUtilities.java
           set +e
-          xvfb-run -a ./gradlew :SoftwareModeling:test --tests ghidra.program.model.listing.VariableUtilitiesTest --no-daemon
+          xvfb-run -a ./gradlew :SoftwareModeling:test --tests ghidra.program.model.listing.VariableUtilitiesTest --no-daemon --max-workers=2
           baseline_status=$?
           set -e
-          test "$baseline_status" -ne 0
+          echo "Baseline Gradle exit status: $baseline_status; XML assertions determine expected failures"
           python3 - <<'CHECK'
           import pathlib, xml.etree.ElementTree as ET
           path=pathlib.Path('Ghidra/Framework/SoftwareModeling/build/test-results/test/TEST-ghidra.program.model.listing.VariableUtilitiesTest.xml')
@@ -53,11 +68,13 @@ jobs:
           expected={'testResizeStackWithoutFunction','testShrinkRegisterWithoutFunction','testResizeWithoutFunctionRejectsStackBoundaryCrossing'}
           assert len(cases)==7, (len(cases),failures)
           assert failures==expected, failures
+          assert not any(c.find('skipped') is not None for c in cases)
+          print('Verified baseline: 7 cases, exactly 3 expected failures, no skips')
           target=pathlib.Path('native-evidence');target.mkdir(exist_ok=True)
           (target/'baseline-VariableUtilitiesTest.xml').write_bytes(path.read_bytes())
           CHECK
       - name: Restore exact candidate sources
-        if: always()
+        if: always() && matrix.pr == '9790'
         run: |
           git restore --source=HEAD --staged --worktree Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableImpl.java Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableUtilities.java
           git diff --exit-code HEAD
@@ -65,18 +82,27 @@ jobs:
         env:
           TEST_TASK: ${{ matrix.task }}
           TEST_CLASS: ${{ matrix.test }}
-        run: xvfb-run -a ./gradlew "$TEST_TASK" --tests "$TEST_CLASS" --no-daemon
-      - name: Verify all regression and control cases executed
+        run: xvfb-run -a ./gradlew "$TEST_TASK" --tests "$TEST_CLASS" --no-daemon --max-workers=2
+      - name: Verify actual test results independently of Gradle status
+        env:
+          TEST_CLASS: ${{ matrix.test }}
+          EXPECTED_TESTS: ${{ matrix.expected_tests }}
         run: |
           python3 - <<'CHECK'
-          import xml.etree.ElementTree as ET
-          root=ET.parse('Ghidra/Framework/SoftwareModeling/build/test-results/test/TEST-ghidra.program.model.listing.VariableUtilitiesTest.xml').getroot()
+          import glob, os, xml.etree.ElementTree as ET
+          paths=glob.glob('**/build/test-results/test/TEST-'+os.environ['TEST_CLASS']+'.xml',recursive=True)
+          assert len(paths)==1, paths
+          root=ET.parse(paths[0]).getroot()
           cases=root.findall('testcase')
-          assert len(cases)==7
+          assert len(cases)>0, 'No tests executed'
+          expected=int(os.environ['EXPECTED_TESTS'])
+          if expected: assert len(cases)==expected, (len(cases),expected)
+          assert all(c.attrib.get('classname')==os.environ['TEST_CLASS'] for c in cases)
           assert all(c.find('failure') is None and c.find('error') is None and c.find('skipped') is None for c in cases)
+          print('Verified',os.environ['TEST_CLASS'],len(cases),'passing tests, no failures/errors/skips')
           CHECK
       - name: Build Ghidra distribution from the same source
-        run: ./gradlew buildGhidra --parallel --no-daemon
+        run: ./gradlew buildGhidra --parallel --no-daemon --max-workers=2
       - name: Retain test results
         if: always()
         uses: actions/upload-artifact@v7
