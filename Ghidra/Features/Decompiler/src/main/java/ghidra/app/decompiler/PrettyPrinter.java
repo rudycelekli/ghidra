@@ -92,8 +92,11 @@ public class PrettyPrinter {
 
 	private static void getText(StringBuilder buff, ClangLine line, NameTransformer transformer) {
 		buff.append(line.getIndentString());
-		List<ClangToken> tokens = line.getAllTokens();
+		getText(buff, line.getAllTokens(), transformer);
+	}
 
+	private static void getText(StringBuilder buff, List<ClangToken> tokens,
+			NameTransformer transformer) {
 		for (ClangToken token : tokens) {
 			boolean isToken2Clean = token instanceof ClangFuncNameToken ||
 				token instanceof ClangVariableToken || token instanceof ClangTypeToken ||
@@ -127,8 +130,12 @@ public class PrettyPrinter {
 		int nChildren = tokgroup.numChildren();
 		for (int i = 0; i < nChildren; ++i) {
 			ClangNode node = tokgroup.Child(i);
-			if (node instanceof ClangFuncProto) {
-				return node.toString() + ";";
+			if (node instanceof ClangFuncProto prototype) {
+				List<ClangToken> tokens = new ArrayList<>();
+				prototype.tokenIterator(true).forEachRemaining(tokens::add);
+				StringBuilder buff = new StringBuilder();
+				getText(buff, tokens, transformer);
+				return buff.append(';').toString();
 			}
 		}
 		return null;
