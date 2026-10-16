@@ -1887,7 +1887,7 @@ void AttributeToken(Declaration dec) : { }
 
 void AttributeSpecList(Declaration dec) : {}
 {
-    ( AttributeSpec(dec) )+
+    ( LOOKAHEAD(AttributeSpec(dec)) AttributeSpec(dec) )+
 }
 
 void SubIdent(Declaration dec) : {
@@ -2453,7 +2453,8 @@ Declaration DirectDeclarator(Declaration dt, DataType container) : {
 
 Declaration Pointer(Declaration dec) : {}
 {
-    ("*" | "&") [ dec = TypeQualifierList(dec) ] [ dec = Pointer(dec) ] 
+    ("*" | "&") [ LOOKAHEAD(TypeQualifierList(dec)) dec = TypeQualifierList(dec) ]
+    [ dec = Pointer(dec) ]
     {
         // TODO: is this right?
         dec.setDataType(dtMgr.getPointer(dec.getDataType()));
@@ -2463,7 +2464,7 @@ Declaration Pointer(Declaration dec) : {}
 
 Declaration TypeQualifierList(Declaration dec) : {}
 {
-    ( dec = TypeQualifier(dec) )+
+    ( LOOKAHEAD(TypeQualifier(dec)) dec = TypeQualifier(dec) )+
     {
         return dec;
     }
