@@ -1683,7 +1683,7 @@ PPToken LineInfo() : {Token t; Token u;}
       (t=<NUMERIC>)  {
          t.image = "#line " + t.image + ": \""+curFileStackTop()+"\"";
          println(t.image);
-         token_source.SwitchTo(DEFAULT);   // bad stuff, but the only way to get back to default lexer
+         token_source.SwitchTo(LINE);
       }
     )
        {return new PPToken(t);}
