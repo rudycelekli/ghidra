@@ -49,6 +49,7 @@ import ghidra.framework.store.db.PackedDatabase;
 import ghidra.program.model.dtarchive.FileDataTypeArchive;
 import ghidra.program.model.lang.CompilerSpecID;
 import ghidra.program.model.lang.LanguageID;
+import ghidra.program.model.listing.Program;
 import ghidra.util.HelpLocation;
 import ghidra.util.Msg;
 import ghidra.util.filechooser.ExtensionFileFilter;
@@ -740,9 +741,17 @@ class ParseDialog extends ReusableDialogComponentProvider {
 
 			parseOptionsField.setText(sb.toString());
 
-			languageIDString = langString;
-
-			compilerIDString = compileString;
+			if (langString != null || compileString != null) {
+				languageIDString = langString;
+				compilerIDString = compileString;
+			}
+			else if (languageIDString == null && compilerIDString == null) {
+				Program program = plugin.getProgram();
+				if (program != null) {
+					languageIDString = program.getLanguageID().getIdAsString();
+					compilerIDString = program.getCompilerSpec().getCompilerSpecID().getIdAsString();
+				}
+			}
 
 			updateArchitectureDescription();
 
