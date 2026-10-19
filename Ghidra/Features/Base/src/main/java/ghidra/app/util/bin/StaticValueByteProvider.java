@@ -100,7 +100,7 @@ public class StaticValueByteProvider implements ByteProvider {
 	@Override
 	public byte[] readBytes(long index, long length) throws IOException {
 		assertValidIndex(index, true);
-		if (index + length > length) {
+		if (index + length > this.length) {
 			throw new IOException("Attempt to read beyond end of byte data");
 		}
 		byte[] destBytes = new byte[(int) length];
