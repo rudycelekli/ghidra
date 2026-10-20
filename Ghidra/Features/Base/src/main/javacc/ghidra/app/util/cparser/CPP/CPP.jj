@@ -420,6 +420,10 @@ public class PreProcessor {
 			BigInteger vvalue = BigInteger.ZERO;
 			try {
 				tvalue = getLongValue(getDef(this).image);
+			}
+			catch (Exception e) {
+			}
+			try {
 				vvalue = getLongValue(getDef(val2).image);
 			}
 			catch (Exception e) {
