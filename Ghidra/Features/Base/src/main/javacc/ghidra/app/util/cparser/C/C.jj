@@ -1129,7 +1129,7 @@ TOKEN :
             |
             "\\"
             (
-                [ "n", "t", "b", "r", "f", "\\", "\'", "\"" ]
+                [ "a", "n", "t", "b", "r", "f", "v", "?", "\\", "\'", "\"" ]
                 |
                 [ "0"-"7" ] ( [ "0"-"7" ] )?
                 |
@@ -3159,8 +3159,22 @@ Object Constant() : {
         |
         t = <CHARACTER_LITERAL>
         {
-            if (t.image.length() == 1) {
-              obj = new Character(t.image.charAt(0));
+            String character = t.image.substring(t.image.indexOf('\'') + 1, t.image.length() - 1);
+            if (character.length() == 1) {
+              obj = Character.valueOf(character.charAt(0));
+            } else if (character.matches("\\\\[0-7]{1,3}")) {
+              obj = Long.valueOf(Long.parseLong(character.substring(1), 8));
+            } else if (character.length() == 2 && character.charAt(0) == '\\') {
+              switch (character.charAt(1)) {
+                case 'a': obj = Long.valueOf(7); break;
+                case 'b': obj = Long.valueOf(8); break;
+                case 't': obj = Long.valueOf(9); break;
+                case 'n': obj = Long.valueOf(10); break;
+                case 'v': obj = Long.valueOf(11); break;
+                case 'f': obj = Long.valueOf(12); break;
+                case 'r': obj = Long.valueOf(13); break;
+                default: obj = Character.valueOf(character.charAt(1)); break;
+              }
             } else if (t.image.length() == 4) {
               long cval = ((long)t.image.charAt(0) << 24) + ((long)t.image.charAt(1) << 16) + ((long)t.image.charAt(2) << 8) + ((long) t.image.charAt(3));
               obj = Long.valueOf(cval);
