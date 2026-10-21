@@ -2581,7 +2581,7 @@ void Initializer() : {}
 
 void InitializerList() : {}
 {
-    [ Designation() ] Initializer() [ "," InitializerList() ]
+    [ Designation() ] Initializer() [ LOOKAHEAD(2) "," InitializerList() ]
 }
 
 void Designation() : { }
