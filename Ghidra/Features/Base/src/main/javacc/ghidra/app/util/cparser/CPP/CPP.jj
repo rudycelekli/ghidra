@@ -2043,10 +2043,10 @@ PPToken ConditionalExpression() :
 {PPToken t,u,i,e;}
 {
     (t=LogicalOrExpression()
-     (LOOKAHEAD(2)
-       u=Qmark() i=LogicalOrExpression() u=ElseMark() e=LogicalOrExpression()
+     [LOOKAHEAD(2)
+       u=Qmark() i=ConditionalExpression() u=ElseMark() e=ConditionalExpression()
        { if (t.getTruth()==true) t=i; else t=e; }
-      )*
+      ]
     )
     {return t;}
 }
