@@ -2275,10 +2275,12 @@ PPToken Assertion() :
 {Token t; PPToken pt=null; boolean checkDefined = false; }
 {
     ((t=<DEFINED> {if (verboseLevel()==7) print(t.image);} )
-        pt=Expression()
+        (<BEGITEM> t=<ITEM> <ENDITEM> | t=<ITEM>)
     {
-       pt = new PPToken(pt);
-       pt.setTruth(isDef(pt) || (pt.kind == FP_NUMERIC || pt.kind == NUMERIC || pt.kind == CHAR_NUMERIC));  // numbers are always defined
+       pt = new PPToken(t);
+       pt.setTruth(isDef(pt));
+       pt.image = pt.getTruth() ? "1" : "0";
+       pt.kind = NUMERIC;
        return pt;
     })
     | 
