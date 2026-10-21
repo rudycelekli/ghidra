@@ -116,7 +116,11 @@ import ghidra.util.task.TaskMonitor;
 import java.util.*;
 import java.io.*;
 import java.math.BigInteger;
-import ghidra.program.util.AddressEvaluator; 
+import ghidra.program.util.AddressEvaluator;
+import generic.expressions.BigIntegerExpressionValue;
+import generic.expressions.ExpressionEvaluator;
+import generic.expressions.ExpressionException;
+import generic.expressions.ExpressionValue;
 
 @SuppressWarnings("all") // ignore warnings from generated code
 public class PreProcessor {
@@ -604,6 +608,23 @@ public class PreProcessor {
 		return pt;
 	}
     
+	private Long evaluateConditionalMacro(String expression) {
+		// Macro expansion leaves undefined identifiers as zero in #if expressions.
+		ExpressionEvaluator evaluator = new ExpressionEvaluator() {
+			@Override
+			protected ExpressionValue evaluateSymbol(String symbol) {
+				return symbol.matches("[a-zA-Z_][a-zA-Z_0-9]*") ?
+					new BigIntegerExpressionValue(0) : null;
+			}
+		};
+		try {
+			return evaluator.parseAsLong(expression);
+		}
+		catch (ExpressionException e) {
+			return null;
+		}
+	}
+
     // Get a define definition by name from the list
     public String getDef(String name) {
             PPToken pt = defs.get(name);
@@ -2445,7 +2466,7 @@ PPToken ValueExpression() :
             // The expanded macro text can't be injected into the parse stream
             // try parsing the expression with an internal simple expression
             // parser that can handle equality expressions
-			Long val = AddressEvaluator.evaluateToLong(pt.image);
+			Long val = evaluateConditionalMacro(pt.image);
 			if (val != null) {
 			    pt.image = val.toString();
 				pt.kind = NUMERIC;
