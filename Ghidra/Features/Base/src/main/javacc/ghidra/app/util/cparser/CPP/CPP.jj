@@ -2379,9 +2379,9 @@ PPToken UnaryExpression() : {
 		LOOKAHEAD(3)
 		obj = LogNegation()
         | 
-	    < PLUS > obj=LogNegation()
+	    < PLUS > obj=UnaryExpression()
 	    |
-	    op=< MINUS > obj=LogNegation() { obj = obj.computeUnary(op); }
+	    op=< MINUS > obj=UnaryExpression() { obj = obj.computeUnary(op); }
 	)
 	{
 		return obj;
