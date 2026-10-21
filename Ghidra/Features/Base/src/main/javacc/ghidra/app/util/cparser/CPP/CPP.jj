@@ -2082,131 +2082,41 @@ PPToken LogicalAndExpression() :
 }
 
 PPToken EqualityExpression() :
-{PPToken t,u,v;}
+{PPToken t,v,resultToken; Token op; boolean equal;}
 {
-    (t=InEqualityExpression()
-     ( LOOKAHEAD(2)
-       u=EqualTo(){
-           if (verboseLevel()==7) print(u.image);
-       }
-       v=InEqualityExpression(){
-           try {
-               t.setTruth(t.compareTo(v)==0);
-           } catch (NumberFormatException exc) {
-               t.setTruth(false);
-           }
-           if (verboseLevel()==7) print(": ");
-       })*
-    ){return t;}
-}
-
-PPToken InEqualityExpression() :
-{PPToken t,u,v;}
-{
-    (t=RelationalExpression()
-     ( LOOKAHEAD(2)
-       u=NotEqualTo(){
-           if (verboseLevel()==7) print(u.image);
-       }
-       v=RelationalExpression(){
-           try {
-               t.setTruth(t.compareTo(v)!=0);
-           } catch (NumberFormatException exc) {
-               t.setTruth(true);
-           }
-           if (verboseLevel()==7) print(": ");
-       })*
-    ){return t;}
+    t=RelationalExpression()
+    (LOOKAHEAD(2) (op=<EQ> | op=<NEQ>) v=RelationalExpression() {
+        equal = t.compareTo(v) == 0;
+        resultToken = new PPToken(t);
+        resultToken.setPath(t.getPath());
+        resultToken.image = (op.kind == EQ ? equal : !equal) ? "1" : "0";
+        resultToken.kind = NUMERIC;
+        resultToken.setTruth("1".equals(resultToken.image));
+        t = resultToken;
+    })*
+    {return t;}
 }
 
 PPToken RelationalExpression() :
-{PPToken t,u,v;}
+{PPToken t,v,resultToken; Token op; int comparison; boolean result = false;}
 {
-    (t=LessExpression()
-     ( LOOKAHEAD(2)
-       u=LessThan(){
-           if (verboseLevel()==7) print(u.image);
-       }
-       v=LessExpression(){
-           try {
-               t.setTruth(t.compareTo(v)<0);
-           } catch (NumberFormatException exc) {
-               t.setTruth(false);
-           }
-           if (verboseLevel()==7) print(": ");
-       })*
-    ){return t;}
-}
-
-PPToken LessExpression() :
-{PPToken t,u,v;}
-{  t=LessThanOrEqualExpression()
-     (LOOKAHEAD(2)
-      u=LessThan(){
-          if (verboseLevel()==7) print(u.image);
-      }
-      v=LessThanOrEqualExpression(){
-          try {
-               t.setTruth(t.compareTo(v)<0);
-           } catch (NumberFormatException exc) {
-               t.setTruth(false);
-           }
-          if (verboseLevel()==7) print(": ");
-      }
-     )*{return t;}
-}
-
-PPToken LessThanOrEqualExpression() :
-{PPToken t,u,v;}
-{  t=GreaterThanOrEqualExpression()
-     ( u=LessThanOrEqual(){
-           if (verboseLevel()==7) print(u.image);
-       }
-       v=GreaterThanOrEqualExpression(){
-           try {
-               t.setTruth(t.compareTo(v)<=0);
-           } catch (NumberFormatException exc) {
-               t.setTruth(false);
-           }
-           if (verboseLevel()==7) print(": ");
-       }
-     )*{return t;}
-}
-
-PPToken GreaterThanOrEqualExpression() :
-{PPToken t,u,v;}
-{  t=GreaterThanExpression()
-     ( u=GreaterThanOrEqual(){
-           if (verboseLevel()==7) print(u.image);
-       }
-       v=GreaterThanExpression(){
-           try {
-               t.setTruth(t.compareTo(v)>=0);
-           } catch (NumberFormatException exc) {
-               t.setTruth(false);
-           }
-           if (verboseLevel()==7) print(": ");
-       }
-     )*{return t;}
-}
-
-PPToken GreaterThanExpression() :
-{PPToken t,u,v;}
-{  (
-   t=Expression()
-   (u=GreaterThan(){
-        if (verboseLevel()==7) print(u.image);
-    }
-    v=Expression(){
-        try {
-            t.setTruth(t.compareTo(v)>0);
-        } catch (NumberFormatException exc) {
-            t.setTruth(false);
+    t=Expression()
+    (LOOKAHEAD(2) (op=<LT> | op=<LE> | op=<GT> | op=<GE>) v=Expression() {
+        comparison = t.compareTo(v);
+        switch (op.kind) {
+            case LT: result = comparison < 0; break;
+            case LE: result = comparison <= 0; break;
+            case GT: result = comparison > 0; break;
+            case GE: result = comparison >= 0; break;
         }
-        if (verboseLevel()==7) print(": ");
-    }
-   )*
-   ){return t;}
+        resultToken = new PPToken(t);
+        resultToken.setPath(t.getPath());
+        resultToken.image = result ? "1" : "0";
+        resultToken.kind = NUMERIC;
+        resultToken.setTruth(result);
+        t = resultToken;
+    })*
+    {return t;}
 }
 
 
