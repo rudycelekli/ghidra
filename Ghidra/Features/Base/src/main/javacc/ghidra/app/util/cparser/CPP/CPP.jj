@@ -462,6 +462,9 @@ public class PreProcessor {
 			catch (Exception e) {
 			}
 			switch (op.kind) {
+				case BIT_NOT:
+					result = tvalue.not();
+					break;
 				case MINUS:
 					result = tvalue.negate();
 					break;
@@ -2382,6 +2385,8 @@ PPToken UnaryExpression() : {
 	    < PLUS > obj=LogNegation()
 	    |
 	    op=< MINUS > obj=LogNegation() { obj = obj.computeUnary(op); }
+	    |
+	    op=< BIT_NOT > obj=UnaryExpression() { obj = obj.computeUnary(op); }
 	)
 	{
 		return obj;
@@ -2651,6 +2656,7 @@ TOKEN : {
     <IFDEFED: "ifdef" > : IFDEF |
     <IFNDEFED: "ifndef" > : IFNDEF |
     <NOT: <NOTCHR> > |
+    <BIT_NOT: "~" > |
     <DEFINED: <DEFD> > |
     <HASINCLUDE: "__has_include" > { if (parenNesting == 0) SwitchTo(INCDEF); matchedToken.kind=ITEM; }  |
     <HASINCLUDENEXT: "__has_include_next" > { if (parenNesting == 0) SwitchTo(INCDEF); matchedToken.kind=ITEM; } |
