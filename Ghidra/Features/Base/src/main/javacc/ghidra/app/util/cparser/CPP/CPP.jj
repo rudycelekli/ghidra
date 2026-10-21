@@ -1247,6 +1247,17 @@ public class PreProcessor {
 		return PreProcessor.ITEM;
 	}
 
+	private Long evaluateMacroValue(String expression) {
+		try {
+			return getLongValue(expression.trim()).longValueExact();
+		}
+		catch (NumberFormatException e) {
+		}
+		catch (ArithmeticException e) {
+		}
+		return AddressEvaluator.evaluateToLong(expression);
+	}
+
 	public Double getDoubleValue(String val) {
 		double value = 0.0;
 		try {
@@ -1259,7 +1270,7 @@ public class PreProcessor {
 
 	private BigInteger getLongValue(String str) throws NumberFormatException {
 		try {
-			if (str.endsWith("L") || str.endsWith("l") || str.endsWith("U")) {
+			if (str.endsWith("L") || str.endsWith("l") || str.endsWith("U") || str.endsWith("u")) {
 				str = str.substring(0, str.length() - 1);
 				return getLongValue(str);
 			}
@@ -1271,6 +1282,10 @@ public class PreProcessor {
 			if (str.startsWith("0x") || str.startsWith("0X")) {
 				return new BigInteger(str.substring(2), 16);
 			}
+			if (str.length() > 1 && str.startsWith("0")) {
+				return new BigInteger(str.substring(1), 8);
+			}
+
 			return new BigInteger(str);
 		} catch (NumberFormatException exc) {
 		}
@@ -2445,7 +2460,7 @@ PPToken ValueExpression() :
             // The expanded macro text can't be injected into the parse stream
             // try parsing the expression with an internal simple expression
             // parser that can handle equality expressions
-			Long val = AddressEvaluator.evaluateToLong(pt.image);
+			Long val = evaluateMacroValue(pt.image);
 			if (val != null) {
 			    pt.image = val.toString();
 				pt.kind = NUMERIC;
@@ -2464,7 +2479,7 @@ PPToken ValueExpression() :
             	tv.kind = getNumericType(tv.image);
             }
 
-			Long val = AddressEvaluator.evaluateToLong(tv.image);
+			Long val = evaluateMacroValue(tv.image);
 			pt.setTruth(true);
 			if (val != null) {
 			  	pt.image = val.toString();
