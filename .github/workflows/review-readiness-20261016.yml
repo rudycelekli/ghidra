@@ -1,0 +1,60 @@
+name: Exact revision Ghidra review qualification
+on:
+  push:
+    branches: [validation/review-readiness-20261016]
+permissions:
+  contents: read
+jobs:
+  qualify:
+    if: github.repository == 'rudycelekli/ghidra'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - pr: '9773'
+            revision: baeacb5b425599a2270a515c4452c2f2b4ffbc92
+            task: ':SoftwareModeling:test'
+            test: ghidra.pcode.floatformat.FloatFormatTest
+          - pr: '9790'
+            revision: 1df50d95f7952f9450ea533796fa0a111d791827
+            task: ':SoftwareModeling:test'
+            test: ghidra.program.model.listing.VariableUtilitiesTest
+          - pr: '9826'
+            revision: de3fb8efc06105ceac5498305cb4250c2e27fec8
+            task: ':Base:test'
+            test: ghidra.app.util.viewer.listingpanel.ProgramBigListingModelOpenDataTest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.revision }}
+          fetch-depth: 1
+      - name: Verify exact source revision
+        env:
+          EXPECTED_REVISION: ${{ matrix.revision }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_REVISION"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Install headless display support
+        run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Fetch project dependencies
+        run: ./gradlew -I gradle/support/fetchDependencies.gradle -DhideDownloadProgress -DnoEclipse --no-daemon
+      - name: Run existing relevant Gradle test class
+        env:
+          TEST_TASK: ${{ matrix.task }}
+          TEST_CLASS: ${{ matrix.test }}
+        run: xvfb-run -a ./gradlew "$TEST_TASK" --tests "$TEST_CLASS" --no-daemon
+      - name: Build Ghidra distribution from the same source
+        run: ./gradlew buildGhidra --parallel --no-daemon
+      - name: Retain test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr-${{ matrix.pr }}-exact-revision-test-results
+          path: '**/build/test-results/**/TEST-*.xml'
+          if-no-files-found: warn
+          retention-days: 14
