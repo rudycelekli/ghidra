@@ -1,0 +1,61 @@
+name: Ghidra reviewer revisions native validation
+on:
+  push:
+    branches: [validation/review-resolution-native-20261013]
+permissions:
+  contents: read
+jobs:
+  pr9840:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/review-gate-9840.py /tmp/review-gate-9840.py && cp .github/verification-9840.java /tmp/verification-9840.java
+      - run: git fetch origin 6277b80d59dfd877592d51233427cfdf3f92e44b && git checkout --detach 6277b80d59dfd877592d51233427cfdf3f92e44b
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Exact candidate baseline and fixed native checks
+        env:
+          KIND: review-pr-9840
+          HEAD_SHA: 6277b80d59dfd877592d51233427cfdf3f92e44b
+          CONFIG: '{"language": "java", "production": "Ghidra/Processors/x86/data/languages/ia.sinc", "test_task": ":Base:test", "test_classes": ["ghidra.app.emulator.MmxX87StateTest", "ghidra.pcode.emu.PlainPcodeEmulatorTest"], "class_counts": {"ghidra.app.emulator.MmxX87StateTest": 16, "ghidra.pcode.emu.PlainPcodeEmulatorTest": 9}, "result_dir": "Ghidra/Features/Base/build/test-results/test", "total": 25, "failures": [["ghidra.app.emulator.MmxX87StateTest", "testPxorFirstRegister"], ["ghidra.app.emulator.MmxX87StateTest", "testPxorLastRegister"], ["ghidra.app.emulator.MmxX87StateTest", "testMovdRegisterTransfer"], ["ghidra.app.emulator.MmxX87StateTest", "testPackedByteArithmetic"], ["ghidra.app.emulator.MmxX87StateTest", "testReversedMovqDestination"], ["ghidra.app.emulator.MmxX87StateTest", "testSignedMaximumConditionalWrite"], ["ghidra.app.emulator.MmxX87StateTest", "testUnsignedMaximumConditionalWrite"], ["ghidra.app.emulator.MmxX87StateTest", "testSignedMinimumUnchangedLowBits"], ["ghidra.app.emulator.MmxX87StateTest", "testUnsignedMinimumUnchangedLowBits"], ["ghidra.app.emulator.MmxX87StateTest", "testEveryRegisterDestinationMapping"], ["ghidra.app.emulator.MmxX87StateTest", "testEveryReversedDestinationMapping"], ["ghidra.app.emulator.MmxX87StateTest", "testMemorySourceWrite"]], "expected_cases": [["ghidra.app.emulator.MmxX87StateTest", "testPxorFirstRegister"], ["ghidra.app.emulator.MmxX87StateTest", "testPxorLastRegister"], ["ghidra.app.emulator.MmxX87StateTest", "testMovdRegisterTransfer"], ["ghidra.app.emulator.MmxX87StateTest", "testPackedByteArithmetic"], ["ghidra.app.emulator.MmxX87StateTest", "testReversedMovqDestination"], ["ghidra.app.emulator.MmxX87StateTest", "testMovqMemoryReadControl"], ["ghidra.app.emulator.MmxX87StateTest", "testEmmsControl"], ["ghidra.app.emulator.MmxX87StateTest", "testSignedMaximumConditionalWrite"], ["ghidra.app.emulator.MmxX87StateTest", "testUnsignedMaximumConditionalWrite"], ["ghidra.app.emulator.MmxX87StateTest", "testSignedMinimumUnchangedLowBits"], ["ghidra.app.emulator.MmxX87StateTest", "testUnsignedMinimumUnchangedLowBits"], ["ghidra.app.emulator.MmxX87StateTest", "testEveryRegisterDestinationMapping"], ["ghidra.app.emulator.MmxX87StateTest", "testEveryReversedDestinationMapping"], ["ghidra.app.emulator.MmxX87StateTest", "testMemorySourceWrite"], ["ghidra.app.emulator.MmxX87StateTest", "testMovdReadControl"], ["ghidra.app.emulator.MmxX87StateTest", "testMaskReadControl"], ["ghidra.pcode.emu.PlainPcodeEmulatorTest", "testRunFibonacciIterativeToy"], ["ghidra.pcode.emu.PlainPcodeEmulatorTest", "testRunFibonacciIterativeX64"], ["ghidra.pcode.emu.PlainPcodeEmulatorTest", "testRunFibonacciRecursiveX64"], ["ghidra.pcode.emu.PlainPcodeEmulatorTest", "testSwi"], ["ghidra.pcode.emu.PlainPcodeEmulatorTest", "testInjectionError"], ["ghidra.pcode.emu.PlainPcodeEmulatorTest", "testSkipThumbStaysThumb"], ["ghidra.pcode.emu.PlainPcodeEmulatorTest", "testInjectedBranch"], ["ghidra.pcode.emu.PlainPcodeEmulatorTest", "testInjectedIndirectBranch"], ["ghidra.pcode.emu.PlainPcodeEmulatorTest", "testArmPltIntoThumbFunction"]]}'
+        run: python /tmp/review-gate-9840.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reviewer-pr-9840-native
+          path: native-evidence/
+          retention-days: 14
+  pr9820:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v6
+      - run: cp .github/review-gate-9820.py /tmp/review-gate-9820.py && cp .github/verification-9820.java /tmp/verification-9820.java
+      - run: git fetch origin 55e84c8a982b046e89b30ae9c0434355418cd040 && git checkout --detach 55e84c8a982b046e89b30ae9c0434355418cd040
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+      - name: Exact candidate baseline and fixed native checks
+        env:
+          KIND: review-pr-9820
+          HEAD_SHA: 55e84c8a982b046e89b30ae9c0434355418cd040
+          CONFIG: '{"language": "java", "production": "Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainFileIndex.java", "test_task": ":Base:integrationTest", "test_classes": ["ghidra.framework.data.ProjectFileIndexFolderChangeTest"], "class_counts": {"ghidra.framework.data.ProjectFileIndexFolderChangeTest": 10}, "result_dir": "Ghidra/Features/Base/build/test-results/integrationTest", "total": 10, "failures": [["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testCachedIdsSurviveParentRename"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testCachedIdsSurviveParentMove"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testFileRenameKeepsIdLookup"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testReusedOldPathDoesNotReturnReplacementFile"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testReusedOldPathDoesNotResetOriginalIdOnLaterRename"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testFolderRenameUpdatesIndexBeforeLookup"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testFolderMoveUpdatesIndexBeforeLookup"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testFolderMoveToUnvisitedDestinationUpdatesIndexBeforeLookup"]], "expected_cases": [["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testCachedIdsSurviveParentRename"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testCachedIdsSurviveParentMove"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testFileRenameKeepsIdLookup"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testReusedOldPathDoesNotReturnReplacementFile"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testReusedOldPathDoesNotResetOriginalIdOnLaterRename"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testUnrelatedFileIsUnaffectedByFolderRename"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testDeletedFileHasNoIdLookup"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testFolderRenameUpdatesIndexBeforeLookup"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testFolderMoveUpdatesIndexBeforeLookup"], ["ghidra.framework.data.ProjectFileIndexFolderChangeTest", "testFolderMoveToUnvisitedDestinationUpdatesIndexBeforeLookup"]], "production_paths": ["Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainFileIndex.java", "Ghidra/Framework/Project/src/main/java/ghidra/framework/data/GhidraFolderData.java"]}'
+        run: python /tmp/review-gate-9820.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reviewer-pr-9820-native
+          path: native-evidence/
+          retention-days: 14
